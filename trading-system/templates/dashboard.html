@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row mb-2">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Panel en Vivo <small>Actualización vía WebSocket · 34 micro-estrategias</small></h2>
+        </div>
+        <div>
+            <span class="badge me-2" id="wsBadgeDash" style="background:var(--accent-green);color:#000;">WS Conectado</span>
+            <span class="small text-secondary" id="lastUpdate">—</span>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body py-2 px-3 overflow-auto text-nowrap" id="liveTicker">
+        <span class="text-secondary small">Conectando al WebSocket...</span>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-8 d-flex flex-column gap-3">
+        <div class="card chart-card">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-1">
+                <span><i class="bi bi-graph-up me-1"></i>Gráfico <strong id="chartSymbol">—</strong>
+                    <span class="ms-2" id="tfSelector">
+                        <span class="tf-btn" data-tf="15m" onclick="setTimeframe('15m','1mo')">15m</span>
+                        <span class="tf-btn" data-tf="1h" onclick="setTimeframe('1h','2mo')">1h</span>
+                        <span class="tf-btn" data-tf="4h" onclick="setTimeframe('4h','2mo')">4h</span>
+                        <span class="tf-btn active-tf" data-tf="1d" onclick="setTimeframe('1d','6mo')">1d</span>
+                        <span class="tf-btn" data-tf="1w" onclick="setTimeframe('1wk','1y')">1W</span>
+                    </span>
+                </span>
+                <span class="small text-secondary d-flex align-items-center gap-2">
+                    <span id="chartSizeLabel" style="font-size:0.6rem;color:var(--text-secondary);min-width:30px;text-align:center;">380px</span>
+                    <span id="chartPrice" class="fw-bold" style="color:var(--text-primary);font-size:1.1rem;">—</span>
+                    <span id="chartChange" class="ms-1">—</span>
+                </span>
+            </div>
+            <div class="card-body p-2 text-center" id="chartContainer">
+                <div class="text-secondary py-5"><div class="loading mb-2"></div><small>Cargando gráfico...</small></div>
+            </div>
+            <div class="card-footer p-1 overflow-auto text-nowrap" id="symbolList"></div>
+        </div>
+        <div class="card">
+            <div class="card-header"><i class="bi bi-pie-chart me-1"></i>Grupos de Micro-Estrategias</div>
+            <div class="card-body chart-container"><canvas id="groupChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-4 d-flex flex-column gap-3">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-speedometer2 me-1"></i>Mejor Señal</div>
+            <div class="card-body text-center py-2">
+                <div class="gauge-container" style="width:140px;height:140px;margin-bottom:4px;">
+                    <canvas id="gaugeChart"></canvas>
+                    <div class="gauge-value">
+                        <span id="gaugeAction" style="font-size:1.4rem;">--</span>
+                        <span class="gauge-label">confianza</span>
+                    </div>
+                </div>
+                <div class="row g-1 mt-2" id="gaugeStats"></div>
+            </div>
+        </div>
+        <div class="card" id="analysisSummaryCard">
+            <div class="card-header"><i class="bi bi-list-ul me-1"></i>Resumen</div>
+            <div class="card-body p-0" id="realtimeAnalysis">
+                <div class="text-center text-secondary py-3"><div class="loading mb-2"></div><small>Cargando...</small></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let gaugeChart, groupChart, lastSd = null, activeSymbol = null, currentTimeframe = '1d', currentPeriod = '6mo';
+
+function entryRange(z) { return z.direction === 'buy' ? `$${z.entry_min}–$${z.entry_max}` : `$${z.entry_max}–$${z.entry_min}`; }
+function sigColor(action) {
+    return action === 'buy' ? ['var(--accent-green)', 'rgba(63,185,80,0.15)']
+         : action === 'sell' ? ['var(--accent-red)', 'rgba(248,81,73,0.15)']
+         : ['var(--accent-yellow)', 'rgba(210,153,34,0.15)'];
+}
+
+function updateGauge(action, confidence) {
+    const [color] = sigColor(action);
+    const val = action === 'buy' ? 0.5 + confidence * 0.5 : action === 'sell' ? 0.5 - confidence * 0.5 : 0.5;
+    const deg = val * 180;
+    const el = document.getElementById('gaugeAction');
+    el.textContent = action.toUpperCase();
+    el.style.color = color;
+    if (gaugeChart) gaugeChart.destroy();
+    gaugeChart = new Chart(document.getElementById('gaugeChart'), {
+        type: 'doughnut',
+        data: { datasets: [{ data: [deg, 180 - deg], backgroundColor: [color, 'var(--border)'], borderWidth: 0, circumference: 180, rotation: 270 }] },
+        options: { responsive: true, cutout: '75%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+    });
+}
+
+function renderTicker(snapshot) {
+    const symbols = Object.keys(snapshot).filter(s => s !== 'market_open');
+    const html = symbols.map(sym => {
+        const d = snapshot[sym];
+        const price = d?.price;
+        const action = d?.action || 'waiting';
+        const aCls = action === 'buy' ? 'signal-buy' : action === 'sell' ? 'signal-sell' : 'text-secondary';
+        const change = price?.change || 0;
+        const dir = change >= 0 ? '▲' : '▼';
+        const cCls = change >= 0 ? 'signal-buy' : 'signal-sell';
+        return `<span class="me-4 d-inline-block">
+            <a href="${tvLink(sym)}" target="_blank" class="text-decoration-none">
+                <strong style="color:var(--text-primary);">${sym}</strong>
+                <span class="${aCls} fw-bold ms-1">$${price?.price?.toFixed(2) || '--'}</span>
+                <span class="${cCls}" style="font-size:0.75rem;">${dir}${Math.abs(change).toFixed(2)}%</span>
+                <span class="badge ${action === 'buy' ? 'badge-buy' : action === 'sell' ? 'badge-sell' : 'badge-hold'} ms-1" style="font-size:0.55rem;cursor:pointer;">${action.toUpperCase()}</span>
+            </a>
+        </span>`;
+    }).join('');
+    document.getElementById('liveTicker').innerHTML = html || '<span class="text-secondary">Esperando datos...</span>';
+}
+
+function renderSymbolList(snapshot) {
+    const symbols = Object.keys(snapshot).filter(s => s !== 'market_open');
+    const html = symbols.map(sym => {
+        const d = snapshot[sym];
+        const a = d?.action || 'waiting';
+        const chg = d?.price?.change || 0;
+        const cls = a === 'buy' ? 'signal-buy' : a === 'sell' ? 'signal-sell' : 'text-secondary';
+        const cCls = chg >= 0 ? 'signal-buy' : 'signal-sell';
+        const act = activeSymbol || symbols[0];
+        const isAct = sym === act ? 'active-sym' : '';
+        return `<span class="d-inline-block px-3 py-1 sym-btn ${isAct}" data-sym="${sym}" onclick="setActiveSymbol('${sym}')" style="border-right:1px solid var(--border);font-size:0.8rem;">
+            <strong style="color:var(--text-primary);">${sym}</strong>
+            <span class="${cCls} ms-1">${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%</span>
+            <span class="ms-1 badge ${a === 'buy' ? 'badge-buy' : a === 'sell' ? 'badge-sell' : 'badge-hold'}" style="font-size:0.5rem;">${a.toUpperCase()}</span>
+        </span>`;
+    }).join('');
+    document.getElementById('symbolList').innerHTML = html;
+}
+
+function irAnalizar(sym) {
+    window.location.href = '/analizar?symbol=' + encodeURIComponent(sym);
+}
+
+function setTimeframe(tf, period) {
+    currentTimeframe = tf;
+    currentPeriod = period || '6mo';
+    _chartOffset = 0; _chartVisible = 0; _chartCandles = null;
+    document.querySelectorAll('.tf-btn').forEach(el => {
+        el.classList.toggle('active-tf', el.dataset.tf === tf);
+    });
+    if (activeSymbol) renderChart(activeSymbol);
+}
+
+function setActiveSymbol(sym) {
+    activeSymbol = sym;
+    document.querySelectorAll('.sym-btn').forEach(el => {
+        el.classList.toggle('active-sym', el.dataset.sym === sym);
+    });
+    _chartOffset = 0; _chartVisible = 0; _chartCandles = null;
+    renderChart(sym);
+    if (lastSd && lastSd[sym]) drawRealtimeSummary(lastSd[sym]);
+}
+
+async function fetchChartData(sym, tf, period) {
+    try {
+        const r = await fetch(API_BASE + `/api/grafico/datos?symbol=${encodeURIComponent(sym)}&timeframe=${encodeURIComponent(tf)}&period=${encodeURIComponent(period)}`);
+        const d = await r.json();
+        if (d.candles && d.candles.length > 1) {
+            return d.candles;
+        }
+    } catch(e) {}
+    return null;
+}
+
+var _chartRefreshTimer = null, _chartHeight = 380, _chartOffset = 0, _chartVisible = 0, _chartCandles = null;
+var _dragStartX = 0, _dragStartOff = 0, _isDragging = false;
+
+function changeChartSize(delta) {
+    _chartHeight = Math.max(150, Math.min(800, _chartHeight + delta));
+    if (_chartCandles) {
+        var total = _chartCandles.length;
+        var cur = _chartVisible || total;
+        var zoomFactor = delta > 0 ? -0.1 : 0.1;
+        var newVis = Math.max(5, Math.min(total, Math.round(cur * (1 + zoomFactor))));
+        _chartVisible = newVis;
+        _chartOffset = Math.max(0, Math.min(_chartOffset, total - _chartVisible));
+    }
+    document.getElementById('chartSizeLabel').textContent = _chartHeight + 'px ' + (_chartVisible > 0 ? Math.round(_chartCandles.length / _chartVisible * 100) + '%' : '');
+    if (activeSymbol) renderChart(activeSymbol);
+}
+
+document.getElementById('chartContainer').addEventListener('wheel', function(e) {
+    if (e.ctrlKey) { e.preventDefault(); changeChartSize(e.deltaY > 0 ? -30 : 30); }
+});
+
+// Pan via mouse drag
+document.getElementById('chartContainer').addEventListener('mousedown', function(e) {
+    _isDragging = true; _dragStartX = e.clientX; _dragStartOff = _chartOffset;
+    this.style.cursor = 'grabbing';
+});
+document.addEventListener('mousemove', function(e) {
+    if (!_isDragging || !_chartCandles) return;
+    var dx = _dragStartX - e.clientX;
+    var panRatio = dx / (document.getElementById('chartContainer').offsetWidth || 1);
+    var total = _chartCandles.length;
+    var vis = _chartVisible || total;
+    var newOff = Math.round(_dragStartOff + panRatio * vis);
+    _chartOffset = Math.max(0, Math.min(total - vis, newOff));
+    if (activeSymbol) renderChart(activeSymbol);
+});
+document.addEventListener('mouseup', function() {
+    if (_isDragging) {
+        _isDragging = false;
+        var el = document.getElementById('chartContainer');
+        if (el) el.style.cursor = '';
+    }
+});
+
+function updatePriceDisplay(sym, candles) {
+    const pEl = document.getElementById('chartPrice');
+    const cEl = document.getElementById('chartChange');
+    if (lastSd && lastSd[sym] && lastSd[sym].price) {
+        const price = lastSd[sym].price;
+        pEl.textContent = '$' + price.price.toFixed(2);
+        const chg = price.change || 0;
+        cEl.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+        cEl.style.color = chg >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    } else if (candles && candles.length > 1) {
+        var lastC = candles[candles.length-1];
+        var prevC = candles.length > 1 ? candles[candles.length-2] : null;
+        pEl.textContent = '$' + lastC.c.toFixed(2);
+        if (prevC && prevC.c) {
+            var chg = (lastC.c - prevC.c) / prevC.c * 100;
+            cEl.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+            cEl.style.color = chg >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+        } else {
+            cEl.textContent = '—';
+        }
+    }
+}
+
+async function renderChart(sym) {
+    if (!sym) return;
+    document.getElementById('chartSymbol').textContent = sym;
+    if (_chartRefreshTimer) { clearTimeout(_chartRefreshTimer); _chartRefreshTimer = null; }
+    const cont = document.getElementById('chartContainer');
+    let candles = null;
+    if (currentTimeframe === '1d' && lastSd && lastSd[sym] && lastSd[sym].candles) {
+        candles = lastSd[sym].candles;
+    } else {
+        cont.innerHTML = '<div class="text-secondary py-5"><div class="loading mb-2"></div><small>Cargando ' + currentTimeframe + '...</small></div>';
+        candles = await fetchChartData(sym, currentTimeframe, currentPeriod);
+        var intervals = {'15m':30,'1h':60,'4h':180,'1wk':600};
+        var secs = intervals[currentTimeframe] || 120;
+        _chartRefreshTimer = setTimeout(function() { renderChart(sym); }, secs * 1000);
+    }
+    updatePriceDisplay(sym, candles);
+    if (candles && candles.length > 1) {
+        _chartCandles = candles;
+        var total = candles.length;
+        if (!_chartVisible || _chartVisible > total) _chartVisible = total;
+        var endIdx = Math.min(_chartOffset + _chartVisible, total);
+        var startIdx = Math.max(0, Math.min(_chartOffset, total - 1));
+        var visCandles = candles.slice(startIdx, endIdx);
+        cont.innerHTML = candleChart(visCandles, cont.offsetWidth - 8, _chartHeight);
+    } else {
+        cont.innerHTML = '<div class="text-secondary py-5"><small>Sin datos para ' + currentTimeframe + '</small></div>';
+    }
+}
+
+function renderAnalysis(snapshot) {
+    const symbols = Object.keys(snapshot).filter(s => s !== 'market_open');
+    const html = symbols.map(sym => {
+        const d = snapshot[sym];
+        const a = d?.action || 'waiting';
+        const c = d?.confidence || 0;
+        const cls = a === 'buy' ? 'badge-buy' : a === 'sell' ? 'badge-sell' : 'badge-hold';
+        const grp = d?.groups || {};
+        const topGrp = Object.entries(grp).sort((a,b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0,3)
+            .map(([k,v]) => `<span class="small ${v > 0 ? 'signal-buy' : 'signal-sell'}" style="font-size:0.6rem;">${k}:${v > 0 ? '+' : ''}${(v*100).toFixed(0)}</span>`).join(' ');
+        const pred = d?.prediction || {};
+        const dir = pred.direction;
+        const dirConf = pred.confidence ? (pred.confidence * 100).toFixed(0) : '--';
+        const dirUp = dir && (dir === 'UP' || dir === 'up');
+        const dirDn = dir && (dir === 'DOWN' || dir === 'down');
+        const dirBadge = dir ? `<span class="badge me-1 ${dirUp ? 'badge-buy' : dirDn ? 'badge-sell' : 'badge-hold'}" style="font-size:7px;">${dir.toUpperCase()} ${dirConf}%</span>` : '';
+        return `<div class="strategy-row cursor-pointer" onclick="irAnalizar('${sym}')" title="Analizar ${sym}">
+            <div>
+                <strong style="color:var(--text-primary);font-size:0.85rem;">${sym}</strong>
+                <span class="badge ${cls} ms-1" style="font-size:0.55rem;">${a.toUpperCase()} ${(c*100).toFixed(0)}%</span>
+                <div class="mt-1">${topGrp} ${dirBadge}</div>
+            </div>
+            <div class="text-end small text-secondary">
+                ${a !== 'waiting' ? 'micros: ' + (d?.micro_total || 0) : ''}
+            </div>
+        </div>`;
+    }).join('');
+    document.getElementById('realtimeAnalysis').innerHTML = html || '<div class="text-center text-secondary py-4"><small>Esperando datos...</small></div>';
+}
+
+function updateGaugeStats(bestSym, bestA, bestC, bestD) {
+    const zones = bestD?.ote_zones || [];
+    const matchZone = zones.find(z =>
+        (bestA === 'buy' && z.direction === 'buy') || (bestA === 'sell' && z.direction === 'sell')
+    ) || zones[0];
+    const oteHtml = (matchZone ? [matchZone] : []).map(z => {
+        const zCls = z.direction === 'buy' ? 'badge-buy' : 'badge-sell';
+        const rr = z.rr_ratio ? z.rr_ratio.toFixed(1) : '--';
+        const score = z.confluence_score || 0;
+        const strength = z.strength_label || '';
+        return `<div class="mt-2 p-2 ote-card" style="background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid ${z.direction === 'buy' ? 'var(--accent-green)' : 'var(--accent-red)'}33;position:relative;">
+            <div class="d-flex align-items-center justify-content-between gap-2">
+                <span class="badge ${zCls}" style="font-size:0.6rem;">OTE ${z.direction.toUpperCase()} — ${strength} (${score}/100)</span>
+                <span class="small" style="color:var(--text-primary);">R:R ${rr}:1</span>
+            </div>
+            <div class="small mt-1" style="color:var(--text-primary);font-size:0.6rem;">
+                Entrada: ${entryRange(z)} &nbsp;|&nbsp; SL: $${z.stop_loss} &nbsp;|&nbsp; TP1: $${z.tp1}
+            </div>
+            <div class="ote-chart" style="display:none;margin-top:4px;">${oteMiniChart(z, 120, 70)}</div>
+        </div>`;
+    }).join('');
+    const lbl = document.getElementById('gaugeStats');
+    lbl.innerHTML = `<div class="col-12 small text-secondary">Mejor: <strong style="color:var(--text-primary);">${bestSym}</strong></div>
+        ${oteHtml}`;
+}
+
+var _dashboardReady = false;
+
+window.onWSData = function(data) {
+    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+    document.getElementById('wsBadgeDash').textContent = 'WS Conectado';
+    document.getElementById('wsBadgeDash').style.background = 'var(--accent-green)';
+    lastSd = data;
+    renderTicker(data);
+    renderSymbolList(data);
+    renderAnalysis(data);
+    let bestA = 'hold', bestC = 0, bestSym = '', bestD = null;
+    Object.entries(data).forEach(([sym, d]) => {
+        if (d?.confidence > bestC && d?.action !== 'waiting' && d?.action !== 'hold' && sym !== 'market_open') {
+            bestC = d.confidence; bestA = d.action; bestSym = sym; bestD = d;
+        }
+    });
+    if (bestC > 0) {
+        updateGauge(bestA, bestC);
+        updateGaugeStats(bestSym, bestA, bestC, bestD);
+        // Auto-speak strong new signals (only when confidence > 50% and not already spoken)
+        if (bestC > 0.5 && bestSym && (!window._lastSpoken || window._lastSpoken.sym !== bestSym || window._lastSpoken.conf < bestC - 0.1)) {
+            window._lastSpoken = { sym: bestSym, conf: bestC, time: Date.now() };
+            var dirStr = bestA === 'buy' ? 'subir' : 'bajar';
+            var priceStr = bestD && bestD.price ? ' a ' + bestD.price.price.toFixed(2) : '';
+            speakText('Senal de ' + bestA.toUpperCase() + ' para ' + bestSym + priceStr + '. El precio podria ' + dirStr + ' en los proximos segundos. Confianza ' + Math.round(bestC * 100) + ' por ciento.');
+        }
+    }
+    if (!activeSymbol) {
+        activeSymbol = bestSym || Object.keys(data).filter(s => s !== 'market_open')[0];
+        if (activeSymbol && data[activeSymbol]) document.getElementById('aiAnalysis').innerHTML = generateAIAnalysis(data[activeSymbol]);
+    }
+    if (activeSymbol) {
+        if (currentTimeframe === '1d') renderChart(activeSymbol);
+        else updatePriceDisplay(activeSymbol);
+        if (data[activeSymbol]) document.getElementById('aiAnalysis').innerHTML = generateAIAnalysis(data[activeSymbol]);
+    }
+    _dashboardReady = true;
+};
+
+setInterval(() => {
+    if (lastSd && Date.now() - window.lastDataTime > 3000) {
+        document.getElementById('wsBadgeDash').textContent = 'WS Lento';
+        document.getElementById('wsBadgeDash').style.background = 'var(--accent-yellow)';
+    } else if (window.wsConnected) {
+        document.getElementById('wsBadgeDash').textContent = 'WS Conectado';
+        document.getElementById('wsBadgeDash').style.background = 'var(--accent-green)';
+    } else {
+        document.getElementById('wsBadgeDash').textContent = 'WS Desconectado';
+        document.getElementById('wsBadgeDash').style.background = 'var(--accent-red)';
+    }
+}, 2000);
+
+async function loadStrategies() {
+    try {
+        const d = await (await         fetch(API_BASE + '/api/estrategias')).json();
+        const comps = d.composites || [];
+        const grpCount = {};
+        comps.forEach(c => { grpCount[c.group] = (grpCount[c.group] || 0) + c.micro_count; });
+        const labels = { 'ict':'ICT/SMC','momentum':'Momento','trend':'Tendencia','volatility':'Volatilidad','volume':'Volumen','mean_reversion':'Reversión','price_action':'PA','structure':'Estructura' };
+        const colors = { 'ict':'#bc8cff','momentum':'#58a6ff','trend':'#3fb950','volatility':'#d29922','volume':'#f0883e','mean_reversion':'#79c0ff','price_action':'#ff7b72','structure':'#8b949e' };
+
+        if (groupChart) groupChart.destroy();
+        groupChart = new Chart(document.getElementById('groupChart'), {
+            type: 'polarArea',
+            data: {
+                labels: Object.keys(grpCount).map(g => labels[g] || g),
+                datasets: [{ data: Object.values(grpCount), backgroundColor: Object.keys(grpCount).map(g => (colors[g] || '#8b949e') + '33'), borderColor: Object.keys(grpCount).map(g => colors[g] || '#8b949e'), borderWidth: 1 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#f0f6fc', font: { size: 10 } } } }, scales: { r: { grid: { color: 'rgba(48,54,61,0.5)' }, ticks: { display: false } } } }
+        });
+    } catch(e) {}
+}
+
+loadStrategies();
+</script>
+{% endblock %}

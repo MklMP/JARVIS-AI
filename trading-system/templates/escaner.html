@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h2>Escáner de Mercado Multi-TF <small>Analiza <span id="totalSymbols">214</span> acciones · 2 temporalidades (4h, 1d) · 34 micro-estrategias · predicción</small></h2>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <button class="btn btn-accent w-100 py-2" onclick="startScan()" id="scanBtn">
+                    <i class="bi bi-arrow-repeat me-1"></i>Actualizar <span id="scanBtnSymbols">214</span> acciones
+                </button>
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control" id="searchInput" placeholder="Buscar símbolo..." oninput="filterResults()">
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="filterBB" onchange="applyFilters()" style="font-size:0.8rem;">
+                    <option value="">BB: Todas</option>
+                    <option value="outside">BB: Fuera de bandas</option>
+                    <option value="inside">BB: Dentro de bandas</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="filterFVG" onchange="applyFilters()" style="font-size:0.8rem;">
+                    <option value="">FVG: Todas</option>
+                    <option value="bullish">FVG: Alcista</option>
+                    <option value="bearish">FVG: Bajista</option>
+                    <option value="any">FVG: Cualquiera</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="filterSort" onchange="applyFilters()" style="font-size:0.8rem;">
+                    <option value="desc">Orden: Mayor prob.</option>
+                    <option value="asc">Orden: Menor prob.</option>
+                </select>
+            </div>
+            <div class="col-md-2" id="scanStatus">
+                <span class="text-secondary small">Listo</span>
+            </div>
+        </div>
+        <div class="mt-3 position-relative">
+            <div class="progress" style="height:12px;background:var(--border);border-radius:6px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" id="scanProgress"
+                     style="width:0%;background:linear-gradient(90deg,var(--accent-green),var(--accent-cyan));height:12px;border-radius:6px;transition:width 0.4s;"></div>
+            </div>
+            <div class="mt-1 d-flex justify-content-between small text-secondary">
+                <span id="progressPct">0%</span>
+                <span id="progressDetail">Esperando...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4" id="scanSummary" style="display:none;">
+    <div class="col-md-3"><div class="card stat-card"><div class="label">TOTAL ANALIZADAS</div><div class="number" id="scanTotal" style="color:var(--accent-cyan);">0</div></div></div>
+    <div class="col-md-3"><div class="card stat-card"><div class="label">COMPRAR</div><div class="number signal-buy" id="scanBuyCount">0</div></div></div>
+    <div class="col-md-3"><div class="card stat-card"><div class="label">VENDER</div><div class="number signal-sell" id="scanSellCount">0</div></div></div>
+    <div class="col-md-3"><div class="card stat-card"><div class="label">NEUTRAL</div><div class="number" id="scanHoldCount" style="color:var(--accent-yellow);">0</div></div></div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-arrow-up-circle signal-buy me-1"></i>Señales de COMPRA <span class="small text-secondary" id="buyCountLabel"></span></div>
+            <div class="card-body p-0" id="buyResults">
+                <div class="text-center text-secondary py-4"><small>Ejecuta un escaneo primero</small></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-arrow-down-circle signal-sell me-1"></i>Señales de VENTA <span class="small text-secondary" id="sellCountLabel"></span></div>
+            <div class="card-body p-0" id="sellResults">
+                <div class="text-center text-secondary py-4"><small>Ejecuta un escaneo primero</small></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load actual symbol count
+ fetch(API_BASE + '/api/simbolos/disponibles').then(r=>r.json()).then(d => {
+    document.getElementById('totalSymbols').textContent = d.total;
+    document.getElementById('scanBtnSymbols').textContent = d.total;
+}).catch(() => {});
+
+let scanInterval = null;
+let resultsInterval = null;
+let allBuys = [];
+let allSells = [];
+
+function renderRow(i) {
+    const tfs = i.timeframes || [];
+    const tfHtml = tfs.map(t =>
+        `<span class="badge me-1 ${t.net > 0 ? 'bg-green' : t.net < 0 ? 'bg-red' : 'bg-gray'}"
+               style="font-size:10px;" title="${t.tf}: net ${t.net}">${t.tf}</span>`
+    ).join('');
+    const confPct = (i.confidence * 100).toFixed(0);
+    const action = i.action;
+    const pred = i.prediction || {};
+    const dir = pred.direction;
+    const dirUp = dir && (dir === 'UP' || dir === 'up');
+const dirDn = dir && (dir === 'DOWN' || dir === 'down');
+const dirBadge = dir ? `<span class="badge me-1 ${dirUp ? 'badge-buy' : dirDn ? 'badge-sell' : 'badge-hold'}" style="font-size:9px;cursor:help;" title="Prediccion: ${dir}\nConfianza: ${pred.confidence ? (pred.confidence*100).toFixed(0)+'%' : '--'}\nScore: ${pred.confluence_score||'--'}/100">${dir.toUpperCase()}</span>` : '';
+    return `<div class="strategy-row" title="Haz clic para ver detalle completo">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a href="${tvLink(i.symbol)}" target="_blank" class="text-decoration-none"><strong style="min-width:70px;color:var(--text-primary);font-size:0.9rem;">${i.symbol}</strong></a>
+            <div style="width:100px;"><div class="conf-bar" style="height:10px;width:${confPct}%;background:${action === 'buy' ? 'var(--accent-green)' : action === 'sell' ? 'var(--accent-red)' : 'var(--accent-yellow)'};"></div></div>
+            <span style="font-weight:700;font-size:0.85rem;min-width:40px;">${confPct}%</span>
+            <span style="font-weight:600;font-size:0.85rem;min-width:45px;">net:${i.net_score?.toFixed(3) || '0'}</span>
+            <div class="d-flex gap-1">${tfHtml}</div>
+            ${dirBadge}
+        </div>
+    </div>`;
+}
+
+function renderDetailRow(i) {
+    const tfs = i.timeframes || [];
+    const tfHtml = tfs.map(t =>
+        `<span class="badge me-1 ${t.net > 0 ? 'bg-green' : t.net < 0 ? 'bg-red' : 'bg-gray'}"
+               style="font-size:10px;" title="${t.tf}: net ${t.net}">${t.tf}</span>`
+    ).join('');
+    const confPct = (i.confidence * 100).toFixed(0);
+    const action = i.action;
+    const pred = i.prediction || {};
+    const dir = pred.direction;
+    const dirCls = dir === 'UP' ? 'badge-buy' : dir === 'DOWN' ? 'badge-sell' : 'badge-hold';
+    const dirConf = pred.confidence ? (pred.confidence * 100).toFixed(0) : '--';
+    const dirTip = dir ? `Direccion: ${dir} (${dirConf}% confianza)\nConfluencia: ${pred.confluence_score || '--'}/100\n${pred.reason || ''}` : '';
+    const dirBadge = dir ? `<span class="badge ${dirCls}" style="font-size:9px;cursor:help;" title="${dirTip}">${dir} ${dirConf}%</span>` : '';
+    const bbBadge = i.bb_outside ? `<span class="badge ${i.bb_position < 0.5 ? 'badge-buy' : 'badge-sell'} me-1" style="font-size:8px;cursor:help;" title="Precio fuera de BB (posicion: ${i.bb_position})">BB</span>` : '';
+    const fvgBadge = i.fvg_bullish ? '<span class="badge badge-buy me-1" style="font-size:8px;cursor:help;" title="FVG alcista detectado">FVG+</span>' : i.fvg_bearish ? '<span class="badge badge-sell me-1" style="font-size:8px;cursor:help;" title="FVG bajista detectado">FVG-</span>' : '';
+    const zones = i.ote_zones || [];
+    const oteHtml = zones.slice(0, 2).map(z => {
+        const zCls = z.direction === 'buy' ? 'badge-buy' : 'badge-sell';
+        const rr = z.rr_ratio ? z.rr_ratio.toFixed(1) : '--';
+        const er = z.direction === 'buy' ? `$${z.entry_min} - $${z.entry_max}` : `$${z.entry_max} - $${z.entry_min}`;
+        const tip = `OTE ${z.direction.toUpperCase()}\nEntrada: ${er}\nStop Loss: $${z.stop_loss}\nTP1: $${z.tp1} | TP2: $${z.tp2} | TP3: $${z.tp3}\nR:R: ${rr}:1\nScore Confluencia: ${z.confluence_score || '--'}/100\n${z.strength_label || ''}`;
+        return `<span class="ote-badge-wrap" style="position:relative;display:inline-block;">
+            <span class="badge ${zCls} me-1" style="font-size:9px;cursor:help;" title="${tip}">OTE ${z.direction.toUpperCase()}</span>
+            <span class="ote-chart-popup" style="display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);z-index:999;margin-bottom:4px;">${oteMiniChart(z, 120, 75)}</span>
+        </span>`;
+    }).join('');
+    const targets = pred.target_1 ? `TP1: $${pred.target_1.toFixed(2)} | TP2: $${pred.target_2.toFixed(2)} | TP3: $${pred.target_3.toFixed(2)}` : '';
+    return `<div class="strategy-row" style="padding:10px 14px;">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <a href="${tvLink(i.symbol)}" target="_blank" class="text-decoration-none"><strong style="min-width:70px;color:var(--text-primary);font-size:0.95rem;">${i.symbol}</strong></a>
+                <div style="width:100px;"><div class="conf-bar" style="height:10px;width:${confPct}%;background:${action === 'buy' ? 'var(--accent-green)' : action === 'sell' ? 'var(--accent-red)' : 'var(--accent-yellow)'};"></div></div>
+                <span style="font-weight:700;font-size:0.9rem;min-width:40px;">${confPct}%</span>
+                <span style="font-weight:600;font-size:0.85rem;min-width:45px;">net:${i.net_score?.toFixed(3) || '0'}</span>
+                <div class="d-flex gap-1">${tfHtml}</div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                ${dirBadge}
+                ${bbBadge}
+                ${fvgBadge}
+                ${oteHtml}
+            </div>
+        </div>
+        ${targets ? `<div class="mt-1" style="padding-left:10px;font-size:0.8rem;color:var(--text-primary);">${targets} | SL: $${pred.stop_loss?.toFixed(2) || '--'}</div>` : ''}
+        ${pred.reason ? `<div class="mt-1" style="padding-left:10px;font-size:0.75rem;color:var(--text-primary);">${pred.reason}</div>` : ''}
+    </div>`;
+}
+
+function filterResults() {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    const filterList = (items, elId, maxShow = 200) => {
+        const filtered = q ? items.filter(i => i.symbol.toLowerCase().includes(q)) : items;
+        if (!filtered.length) {
+            const bb = document.getElementById('filterBB')?.value || '';
+            const fvg = document.getElementById('filterFVG')?.value || '';
+            const hasFilter = bb || fvg;
+            document.getElementById(elId).innerHTML = '<div class="text-center py-4" style="color:var(--text-primary);"><small>' +
+                (q ? 'Sin resultados para "' + q + '"' :
+                 hasFilter ? 'Ninguna señal con este filtro' :
+                 'Sin señales aún') + '</small></div>';
+            return;
+        }
+        const show = filtered.slice(0, maxShow).map(renderDetailRow).join('');
+        document.getElementById(elId).innerHTML = show;
+        if (filtered.length > maxShow) {
+            document.getElementById(elId).innerHTML +=
+                `<div class="text-center text-secondary py-2 small">... y ${filtered.length - maxShow} más</div>`;
+        }
+    };
+    filterList(allBuys, 'buyResults');
+    filterList(allSells, 'sellResults');
+}
+
+function getFilterParams() {
+    const bb = document.getElementById('filterBB')?.value || '';
+    const fvg = document.getElementById('filterFVG')?.value || '';
+    const sort = document.getElementById('filterSort')?.value || 'desc';
+    const p = new URLSearchParams({ max_results: '1000', sort_order: sort });
+    if (bb) p.set('filtro_bb', bb);
+    if (fvg) p.set('filtro_fvg', fvg);
+    return p.toString();
+}
+
+async function loadResults() {
+    try {
+        const r = await (await fetch(API_BASE + '/api/escanear/resultados?' + getFilterParams())).json();
+        document.getElementById('scanSummary').style.display = 'flex';
+        document.getElementById('scanTotal').textContent = r.resumen?.total || 0;
+        document.getElementById('scanBuyCount').textContent = r.resumen?.comprar || 0;
+        document.getElementById('scanSellCount').textContent = r.resumen?.vender || 0;
+        document.getElementById('scanHoldCount').textContent = r.resumen?.hold || 0;
+
+        allBuys = (r.comprar || []).sort((a,b) => b.confidence - a.confidence);
+        allSells = (r.vender || []).sort((a,b) => b.confidence - a.confidence);
+
+        document.getElementById('buyCountLabel').textContent = allBuys.length > 0 ? '(' + allBuys.length + ')' : '';
+        document.getElementById('sellCountLabel').textContent = allSells.length > 0 ? '(' + allSells.length + ')' : '';
+
+        // Show filter info
+        const bb = document.getElementById('filterBB')?.value || '';
+        const fvg = document.getElementById('filterFVG')?.value || '';
+        const bbLabel = bb === 'outside' ? 'BB fuera' : bb === 'inside' ? 'BB dentro' : '';
+        const fvgLabel = fvg === 'bullish' ? 'FVG+': fvg === 'bearish' ? 'FVG-' : fvg === 'any' ? 'FVG' : '';
+        const filterInfo = [bbLabel, fvgLabel].filter(Boolean).join(' + ');
+        if (filterInfo) {
+            document.getElementById('scanStatus').innerHTML = '<span class="small" style="color:var(--text-primary);">Filtro: ' + filterInfo + ' | ' + r.resumen?.total + ' resultados</span>';
+        }
+
+        filterResults();
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+async function startScan() {
+    const btn = document.getElementById('scanBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="loading"></div> Escaneando...';
+    document.getElementById('scanSummary').style.display = 'none';
+    document.getElementById('scanProgress').style.width = '0%';
+    document.getElementById('progressPct').textContent = '0%';
+    allBuys = [];
+    allSells = [];
+
+    try {
+        const resp = await fetch(API_BASE + '/api/escanear/iniciar');
+        const data = await resp.json();
+        const total = data.simbolos || 500;
+
+        if (data.status === 'ya_en_curso') {
+            document.getElementById('scanStatus').innerHTML = '<span class="signal-buy">Escaneando (en segundo plano)...</span>';
+            // Don't reset progress — just reconnect to existing polling
+            if (scanInterval) clearInterval(scanInterval);
+            if (resultsInterval) clearInterval(resultsInterval);
+            scanInterval = setInterval(() => pollProgress(btn, total), 500);
+            resultsInterval = setInterval(async () => {
+                try {
+                    const p = await (await fetch(API_BASE + '/api/escanear/progreso')).json();
+                    if (p.current > 0) await loadResults();
+                } catch(e) {}
+            }, 2000);
+            return;
+        }
+
+        document.getElementById('scanStatus').innerHTML = '<span class="signal-buy">Escaneando...</span>';
+        document.getElementById('progressDetail').textContent = '0 / ' + total + ' (0%)';
+
+        if (scanInterval) clearInterval(scanInterval);
+        if (resultsInterval) clearInterval(resultsInterval);
+
+        scanInterval = setInterval(() => pollProgress(btn, total), 500);
+        resultsInterval = setInterval(async () => {
+            try {
+                const p = await (await fetch(API_BASE + '/api/escanear/progreso')).json();
+                if (p.current > 0) await loadResults();
+            } catch(e) {}
+        }, 2000);
+    } catch(e) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Actualizar ' + (document.getElementById('totalSymbols')?.textContent || '214') + ' acciones';
+        document.getElementById('scanStatus').innerHTML = '<span class="signal-sell">Error al iniciar</span>';
+    }
+}
+
+async function pollProgress(btn, total) {
+    try {
+        const p = await (await fetch(API_BASE + '/api/escanear/progreso')).json();
+        const pct = p.pct || 0;
+        document.getElementById('scanProgress').style.width = pct + '%';
+        document.getElementById('progressPct').textContent = pct + '%';
+        document.getElementById('progressDetail').textContent =
+            (p.current || 0) + ' / ' + (p.total || total) + ' (' + pct.toFixed(1) + '%) - ' + (p.current_symbol || '');
+
+        if (p.status === 'complete' || pct >= 100) {
+            if (scanInterval) clearInterval(scanInterval);
+            if (resultsInterval) clearInterval(resultsInterval);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Actualizar ' + (p.total || total) + ' acciones';
+            document.getElementById('scanProgress').style.width = '100%';
+            document.getElementById('progressPct').textContent = '100%';
+            document.getElementById('progressDetail').textContent = 'Completado!';
+            document.getElementById('scanStatus').innerHTML = '<span class="signal-buy">Completado!</span>';
+            await loadResults();
+        }
+    } catch(e) {}
+}
+
+function applyFilters() {
+    const statusEl = document.getElementById('scanStatus');
+    if (statusEl && statusEl.textContent.includes('Escaneando')) {
+        statusEl.innerHTML = '<span class="text-secondary small">Espera a que termine el escaneo</span>';
+        return;
+    }
+    loadResults();
+}
+
+(async () => {
+    try {
+        const p = await (await fetch(API_BASE + '/api/escanear/progreso')).json();
+        if (p.status === 'complete' && p.current > 0) {
+            updateBtnText();
+            await loadResults();
+        } else if (p.status === 'scanning') {
+            document.getElementById('scanStatus').innerHTML = '<span class="signal-buy">Escaneando (heredado)...</span>';
+            document.getElementById('scanProgress').style.width = (p.pct || 0) + '%';
+            document.getElementById('progressPct').textContent = (p.pct || 0) + '%';
+            document.getElementById('progressDetail').textContent =
+                (p.current || 0) + ' / ' + (p.total || '?') + ' (' + (p.pct || 0).toFixed(1) + '%)';
+            // Reconnect to existing scan polling
+            const btn = document.getElementById('scanBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading"></div> Escaneando...';
+            if (scanInterval) clearInterval(scanInterval);
+            if (resultsInterval) clearInterval(resultsInterval);
+            scanInterval = setInterval(() => pollProgress(btn, p.total || 214), 500);
+            resultsInterval = setInterval(async () => {
+                try {
+                    const pp = await (await fetch(API_BASE + '/api/escanear/progreso')).json();
+                    if (pp.current > 0) await loadResults();
+                } catch(e) {}
+            }, 2000);
+        } else {
+            document.getElementById('scanStatus').innerHTML = '<span class="text-secondary small">Cargando datos automaticamente...</span>';
+            startScan();
+        }
+    } catch(e) {
+        document.getElementById('scanStatus').innerHTML = '<span class="text-secondary small">Iniciando escaneo...</span>';
+        startScan();
+    }
+})();
+
+function updateBtnText() {
+    const btn = document.getElementById('scanBtn');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Actualizar <span id="scanBtnSymbols">' + (document.getElementById('totalSymbols')?.textContent || '214') + '</span> acciones';
+}
+</script>
+{% endblock %}

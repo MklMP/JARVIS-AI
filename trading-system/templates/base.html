@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS - Trading System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <style>
+        :root {
+            --accent-green: #4ade80;
+            --accent-red: #f87171;
+            --accent-yellow: #facc15;
+            --accent-blue: #60a5fa;
+            --accent-purple: #a78bfa;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px; }
+        .signal-buy { color: var(--accent-green); font-weight: 600; }
+        .signal-sell { color: var(--accent-red); font-weight: 600; }
+        .signal-hold { color: var(--accent-yellow); font-weight: 600; }
+        .badge-buy { background: #0d2818; color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .badge-sell { background: #2d0a0a; color: var(--accent-red); border: 1px solid var(--accent-red); }
+        .badge-hold { background: #2d1f00; color: var(--accent-yellow); border: 1px solid var(--accent-yellow); }
+        .conf-bar { height: 6px; border-radius: 3px; transition: width 0.5s ease; }
+        .chart-container { position: relative; height: 220px; width: 100%; }
+        .loading { width: 16px; height: 16px; border: 2px solid #21262d; border-top-color: var(--accent-green); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .gauge-container { position: relative; width: 140px; height: 140px; margin: 0 auto; }
+        .gauge-value { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.8rem; font-weight: 800; text-align: center; }
+        .gauge-label { font-size: 0.65rem; color: #8b949e; font-weight: 400; display: block; }
+        .toast-container { position: fixed; top: 10px; right: 10px; z-index: 9999; }
+        .toast-alert { padding: 8px 14px; border-radius: 6px; font-size: 0.75rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+        .strategy-row { padding: 8px 12px; border-bottom: 1px solid rgba(48,54,61,0.6); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; }
+        .strategy-row:last-child { border-bottom: none; }
+        .strategy-row:hover { background: rgba(255,255,255,0.03); }
+        .metric-value { font-size: 1.4rem; font-weight: 700; }
+        .metric-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; color: #8b949e; margin-bottom: 2px; }
+        .ote-card:hover .ote-chart { display:block !important; }
+        .ote-card { transition: background 0.2s; }
+        .ote-card:hover { background:rgba(255,255,255,0.08) !important; }
+        .sym-btn { cursor:pointer; transition: all 0.2s; }
+        .sym-btn:hover { background:rgba(255,255,255,0.08)!important; }
+        .sym-btn.active-sym { background:rgba(88,166,255,0.12)!important; border-left:3px solid var(--accent-blue)!important; }
+        .tf-btn { display:inline-block; padding:0 6px; font-size:0.65rem; cursor:pointer; color:#8b949e; border-radius:4px; margin:0 1px; transition:all 0.15s; }
+        .tf-btn:hover { color:#fff; background:rgba(255,255,255,0.08); }
+        .tf-btn.active-tf { color:var(--accent-blue); background:rgba(88,166,255,0.15); font-weight:700; }
+        .chart-card { min-height:420px; }
+        .ote-badge-wrap:hover .ote-chart-popup { display:block !important; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #21262d; border-radius: 2px; }
+        .form-select, .form-control { border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; }
+        h2 { font-size: 1.2rem; font-weight: 700; }
+        h2 small { font-size: 0.7rem; color: #8b949e; font-weight: 400; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-sm navbar-dark border-bottom border-secondary mb-3 px-3" style="background:#000;">
+        <div class="container-fluid">
+            <a class="navbar-brand py-0" href="/ts/">
+                <span style="color:var(--accent-green);font-weight:800;font-size:1.1rem;">◈</span>
+                <span style="font-size:0.9rem;font-weight:600;">JARVIS</span>
+                <small class="text-secondary d-none d-sm-inline" style="font-size:0.6rem;font-weight:400;"> QuantumTrade</small>
+            </a>
+            <button class="navbar-toggler border-0 p-1" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                <span class="navbar-toggler-icon" style="width:1.2rem;height:1.2rem;"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav me-auto" id="navLinks">
+                    <li class="nav-item"><a class="nav-link py-1" href="/ts/"><i class="bi bi-speedometer2 me-1"></i>Panel</a></li>
+                    <li class="nav-item"><a class="nav-link py-1" href="/ts/escaner"><i class="bi bi-search me-1"></i>Escáner</a></li>
+                    <li class="nav-item"><a class="nav-link py-1" href="/ts/analizar"><i class="bi bi-graph-up me-1"></i>Analizar</a></li>
+                </ul>
+                <span class="navbar-text py-0 d-none d-md-inline" style="font-size:0.65rem;color:#8b949e;">
+                    <i class="bi bi-lightning-charge me-1" style="color:var(--accent-green);"></i>34 micro-estrategias · tiempo real
+                </span>
+            </div>
+            <script>document.querySelectorAll('#navLinks a').forEach(a => { if (a.href === location.href || (location.pathname.endsWith('/ts/') && a.href.endsWith('/ts/')) || (location.pathname !== '/ts/' && a.href.replace(/\/$/,'') === location.href.replace(/\/$/,''))) a.classList.add('active'); });</script>
+        </div>
+    </nav>
+
+    <script>const API_BASE = location.protocol + '//' + location.hostname + ':{{ ws_port }}';</script>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="container-fluid px-3">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    function showToast(msg, type) {
+        const c = document.getElementById('toastContainer');
+        const colors = { error: 'var(--accent-red)', warning: 'var(--accent-yellow)', ok: 'var(--accent-green)', info: 'var(--accent-blue)' };
+        const icons = { error: 'bi-exclamation-triangle-fill', warning: 'bi-exclamation-circle-fill', ok: 'bi-check-circle-fill', info: 'bi-info-circle-fill' };
+        const el = document.createElement('div');
+        el.className = 'toast-alert';
+        el.style.background = (colors[type] || colors.info) + '22';
+        el.style.border = '1px solid ' + (colors[type] || colors.info) + '44';
+        el.style.color = colors[type] || colors.info;
+        el.innerHTML = '<i class="bi ' + (icons[type] || icons.info) + '"></i> ' + msg;
+        c.appendChild(el);
+        setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; setTimeout(() => el.remove(), 500); }, 5000);
+    }
+
+    let ws = null;
+    let wsReconnectDelay = 1000;
+    let wsConnected = false;
+
+    function connectWS() {
+        if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+        try {
+            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const port = {{ ws_port }};
+            ws = new WebSocket(protocol + '//' + location.hostname + ':' + port + '/ws');
+        } catch(e) { scheduleReconnect(); return; }
+        ws.onopen = () => { wsConnected = true; };
+        ws.onmessage = (e) => {
+            try {
+                const data = JSON.parse(e.data);
+                if (data.pong) return;
+                if (window.onWSData) window.onWSData(data);
+            } catch(err) {}
+        };
+        ws.onclose = () => { wsConnected = false; scheduleReconnect(); };
+        ws.onerror = () => { ws?.close(); };
+    }
+    function scheduleReconnect() {
+        clearTimeout(window._wsRetry);
+        window._wsRetry = setTimeout(() => { connectWS(); wsReconnectDelay = Math.min(wsReconnectDelay * 1.5, 15000); }, wsReconnectDelay);
+    }
+    connectWS();
+    setInterval(() => { if (!wsConnected) connectWS(); }, 5000);
+
+    function tvLink(sym) {
+        return 'https://www.tradingview.com/chart/?symbol=' + encodeURIComponent(sym);
+    }
+    function candleChart(candles, w, h) {
+        if (!candles || candles.length < 2) return '';
+        w = w || 180; h = h || 100;
+        var lo = Infinity, hi = -Infinity, hasBB = false;
+        for (var i = 0; i < candles.length; i++) {
+            var c = candles[i];
+            if (c.l < lo) lo = c.l;
+            if (c.h > hi) hi = c.h;
+            if (!hasBB && c.bb_h != null && c.bb_l != null) hasBB = true;
+            if (c.bb_h != null && c.bb_h > hi) hi = c.bb_h;
+            if (c.bb_l != null && c.bb_l < lo) lo = c.bb_l;
+        }
+        var rng = hi - lo || 1, pad = 4, innerW = w - 30, innerH = h - 2 * pad;
+        var yPx = function(v) { return pad + (hi - v) / rng * innerH; };
+        var candleW = Math.max(2, Math.min(8, innerW / candles.length * 0.6));
+        var gap = innerW / candles.length;
+        var svg = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" style="display:block;">';
+        svg += '<rect x="0" y="0" width="' + w + '" height="' + h + '" fill="rgba(13,17,23,0.95)" rx="3"/>';
+        if (hasBB) {
+            var bbHPath = '', bbLPath = '', bbMPath = '', bbStarted = false;
+            for (var i = 0; i < candles.length; i++) {
+                var cx = 2 + i * gap + candleW / 2;
+                if (candles[i].bb_h != null) { bbHPath += (bbStarted ? 'L' : 'M') + cx + ',' + yPx(candles[i].bb_h); bbStarted = true; }
+            }
+            bbStarted = false;
+            for (var i = candles.length - 1; i >= 0; i--) {
+                var cx = 2 + i * gap + candleW / 2;
+                if (candles[i].bb_l != null) { bbLPath += (bbStarted ? 'L' : 'M') + cx + ',' + yPx(candles[i].bb_l); bbStarted = true; }
+            }
+            bbStarted = false;
+            for (var i = 0; i < candles.length; i++) {
+                if (candles[i].bb_m == null) continue;
+                var cx = 2 + i * gap + candleW / 2;
+                bbMPath += (bbStarted ? 'L' : 'M') + cx + ',' + yPx(candles[i].bb_m);
+                bbStarted = true;
+            }
+            if (bbHPath && bbLPath) {
+                svg += '<path d="' + bbHPath + ' L' + bbLPath.substr(1) + ' Z" fill="rgba(88,166,255,0.08)"/>';
+                svg += '<path d="' + bbHPath + '" fill="none" stroke="rgba(88,166,255,0.35)" stroke-width="0.8"/>';
+                svg += '<path d="' + bbLPath + '" fill="none" stroke="rgba(88,166,255,0.35)" stroke-width="0.8"/>';
+            }
+            if (bbMPath) svg += '<path d="' + bbMPath + '" fill="none" stroke="rgba(88,166,255,0.5)" stroke-width="0.8" stroke-dasharray="3,2"/>';
+        }
+        for (var i = 0; i < candles.length; i++) {
+            var c = candles[i], isUp = c.c >= c.o, col = isUp ? '#4ade80' : '#f87171';
+            var x = 2 + i * gap, top = Math.min(yPx(c.o), yPx(c.c)), bot = Math.max(yPx(c.o), yPx(c.c));
+            svg += '<line x1="' + (x + candleW / 2) + '" y1="' + yPx(c.h) + '" x2="' + (x + candleW / 2) + '" y2="' + yPx(c.l) + '" stroke="' + col + '" stroke-width="0.6"/>';
+            svg += '<rect x="' + x + '" y="' + top + '" width="' + candleW + '" height="' + Math.max(bot - top, 1) + '" fill="' + col + '" rx="0.5"/>';
+        }
+        for (var i = 0; i <= 4; i++) {
+            var val = lo + (hi - lo) * (4 - i) / 4, yy = yPx(val);
+            svg += '<text x="' + (w - 28) + '" y="' + (yy + 2) + '" fill="#888" font-size="5">' + val.toFixed(1) + '</text>';
+        }
+        svg += '</svg>';
+        return svg;
+    }
+    function oteMiniChart(z, w, h) {
+        if (!z || z.entry_min == null) return '';
+        w = w || 100; h = h || 70;
+        var dir = z.direction === 'buy' ? 1 : -1, fs = 6;
+        var vals = [z.entry_min, z.entry_max, z.stop_loss, z.tp1, z.tp2, z.tp3].filter(function(v) { return v != null; });
+        if (vals.length < 2) return '';
+        var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals), rng = hi - lo || 1, pad = h * 0.08;
+        var yPx = function(v) { return pad + (hi - v) / rng * (h - 2 * pad); };
+        var col = dir === 1 ? '#4ade80' : '#f87171', colBg = dir === 1 ? 'rgba(74,222,128,0.2)' : 'rgba(248,113,113,0.2)';
+        var fmt = function(v) { return v != null ? v.toFixed(1) : ''; };
+        var svg = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" style="display:block;">';
+        svg += '<rect x="0" y="0" width="' + w + '" height="' + h + '" fill="rgba(13,17,23,0.95)" rx="4"/>';
+        svg += '<line x1="30" y1="' + pad + '" x2="30" y2="' + (h - pad) + '" stroke="#333" stroke-width="1"/>';
+        svg += '<rect x="24" y="' + Math.min(yPx(z.entry_min), yPx(z.entry_max)) + '" width="12" height="' + Math.abs(yPx(z.entry_max) - yPx(z.entry_min)) + '" fill="' + colBg + '" stroke="' + col + '" stroke-width="1" rx="2"/>';
+        svg += '<line x1="5" y1="' + yPx(z.stop_loss) + '" x2="' + (w-5) + '" y2="' + yPx(z.stop_loss) + '" stroke="#f85149" stroke-width="2"/>';
+        svg += '<text x="5" y="' + (yPx(z.stop_loss) - 2) + '" fill="#f85149" font-size="' + fs + '" font-weight="bold">SL ' + fmt(z.stop_loss) + '</text>';
+        if (z.tp1 != null) { var ty = yPx(z.tp1); svg += '<line x1="5" y1="' + ty + '" x2="' + (w-5) + '" y2="' + ty + '" stroke="' + col + '" stroke-width="1" stroke-dasharray="3,2"/><text x="5" y="' + (ty-2) + '" fill="' + col + '" font-size="' + fs + '" font-weight="bold">TP1 ' + fmt(z.tp1) + '</text>'; }
+        if (z.tp2 != null) { var ty = yPx(z.tp2); svg += '<line x1="38" y1="' + ty + '" x2="' + (w-5) + '" y2="' + ty + '" stroke="' + col + '" stroke-width="0.8" stroke-dasharray="2,3"/><text x="38" y="' + (ty-2) + '" fill="' + col + '" font-size="' + (fs-1) + '">TP2 ' + fmt(z.tp2) + '</text>'; }
+        if (z.tp3 != null) { var ty = yPx(z.tp3); svg += '<line x1="38" y1="' + ty + '" x2="' + (w-5) + '" y2="' + ty + '" stroke="' + col + '" stroke-width="0.8" stroke-dasharray="1,4"/><text x="38" y="' + (ty-2) + '" fill="' + col + '" font-size="' + (fs-1) + '">TP3 ' + fmt(z.tp3) + '</text>'; }
+        svg += '<text x="30" y="' + (pad+8) + '" fill="' + col + '" font-size="' + (fs+1) + '" text-anchor="middle" font-weight="bold">' + (dir === 1 ? '▲ BUY' : '▼ SELL') + '</text>';
+        svg += '<text x="30" y="' + ((Math.min(yPx(z.entry_min),yPx(z.entry_max)) + Math.max(yPx(z.entry_min),yPx(z.entry_max))) / 2 + 3) + '" fill="#fff" font-size="' + (fs-1) + '" text-anchor="middle">ZONA</text>';
+        svg += '</svg>';
+        return svg;
+    }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

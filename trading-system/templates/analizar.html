@@ -1,0 +1,549 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h2>Analizar Multi-TF <small>Compara 1h · 4h · 1d simultáneamente + 31 micro-estrategias + zona OTE + predicción</small></h2>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Símbolo <span class="text-secondary" id="symbolCount"></span></label>
+                <select class="form-select" id="symbol" style="max-height:350px;">
+                    <option value="">Cargando símbolos...</option>
+                </select>
+            </div>
+            <script>
+            fetch(API_BASE + '/api/simbolos/disponibles').then(r=>r.json()).then(d => {
+                const sel = document.getElementById('symbol');
+                sel.innerHTML = d.simbolos.map(s => `<option>${s}</option>`).join('');
+                document.getElementById('symbolCount').textContent = '(' + d.total + ')';
+            }).catch(() => {
+                document.getElementById('symbol').innerHTML = '<option>AAPL</option><option>MSFT</option>';
+            });
+            </script>
+            <div class="col-md-3">
+                <button class="btn btn-accent w-100 py-2" onclick="analyzeMulti()">
+                    <i class="bi bi-lightning-charge me-1"></i>Analizar Multi-TF
+                </button>
+            </div>
+            <div class="col-md-3" id="mainResult"></div>
+            <div class="col-md-3" id="tvButton"></div>
+        </div>
+    </div>
+</div>
+
+<div id="results" style="display:none;">
+    <!-- Mini Chart + Prediccion -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-graph-up me-1"></i>Mini Gráfico <small id="chartSubtitle" class="text-secondary">BB · EMAs · Volumen · Zonas OTE</small>
+                    <span class="float-end" id="chartDirectionBadge"></span>
+                </div>
+                <div class="card-body p-3">
+                    <canvas id="miniChart" height="320" style="width:100%;"></canvas>
+                </div>
+            </div>
+            <div class="card mt-3">
+                <div class="card-header"><i class="bi bi-activity me-1"></i>RSI (<span id="rsiValue">--</span>)</div>
+                <div class="card-body p-3">
+                    <canvas id="rsiChart" height="100" style="width:100%;"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-compass me-1"></i>Predicción de Dirección</div>
+                <div class="card-body" id="predictionPanel">
+                    <div class="text-center py-4 text-secondary">Analice un símbolo para ver la predicción</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><i class="bi bi-bullseye me-1"></i>Zonas OTE (Fibonacci)
+                    <span class="float-end small" style="color:var(--text-secondary);font-weight:400;font-size:10px;cursor:help;" title="UP + OTE BUY = Prediccion alcista + zona de compra = CONFIRMADO\nDOWN + OTE SELL = Prediccion bajista + zona de venta = CONFIRMADO\nUP + OTE SELL = Prediccion alcista pero precio en zona de venta (sobrecomprado) = esperar retroceso\nDOWN + OTE BUY = Prediccion bajista pero precio en zona de compra (sobrevendido) = posible rebote">?</span>
+                </div>
+                <div class="card-body" id="otePanel">
+                    <div class="text-center py-4 text-secondary">Zonas de entrada óptima aparecerán aquí</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TF analysis -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header"><i class="bi bi-clock me-1"></i>Análisis por Timeframe</div>
+                <div class="card-body">
+                    <div class="row g-3" id="tfCards"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-speedometer2 me-1"></i>Señal Final</div>
+                <div class="card-body text-center py-3">
+                    <div class="gauge-container" style="width:160px;height:160px;">
+                        <canvas id="gaugeFinal"></canvas>
+                        <div class="gauge-value">
+                            <span id="finalAction" style="font-size:1.8rem;">--</span>
+                            <span class="gauge-label">confianza</span>
+                        </div>
+                    </div>
+                    <div class="mt-2 small text-secondary">
+                        <span id="finalMicros">0</span> micro-estrategias
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-layers me-1"></i>Desglose por Estrategia Compuesta</div>
+                <div class="card-body p-0" id="compositeBreakdown"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header"><i class="bi bi-grid-3x3-gap me-1"></i>Todas las Micro-Estrategias (<span id="microTotal">0</span>)</div>
+        <div class="card-body p-0" id="microList"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let gaugeFinal, miniChartInst, rsiChartInst;
+
+// Register annotation plugin safely
+try { if (typeof ChartAnnotation !== 'undefined') Chart.register(ChartAnnotation); } catch(e) {}
+
+function sigColor(action) {
+    if (action === 'buy') return ['var(--accent-green)', 'rgba(63,185,80,0.15)'];
+    if (action === 'sell') return ['var(--accent-red)', 'rgba(248,81,73,0.15)'];
+    return ['var(--accent-yellow)', 'rgba(210,153,34,0.15)'];
+}
+
+function renderMiniChart(symbol, chartData) {
+    const candles = chartData.candles || [];
+    if (candles.length < 5) return;
+    const ote = chartData.ote_zones || [];
+    const pred = chartData.prediction || {};
+    const fvg = chartData.fvg_zones || [];
+
+    const dir = pred.direction || 'SIDEWAYS';
+    const conf = pred.confidence || 0;
+    const cScore = pred.confluence_score || 50;
+    const dirCls = dir === 'UP' ? 'badge-buy' : dir === 'DOWN' ? 'badge-sell' : 'badge-hold';
+    document.getElementById('chartDirectionBadge').innerHTML =
+        `<span class="badge ${dirCls} fs-6 px-3 py-2">${dir} ${(conf*100).toFixed(0)}%</span>`;
+    document.getElementById('chartSubtitle').textContent =
+        `${symbol} · BB · EMAs · Volumen · Zonas OTE`;
+    document.getElementById('predictionPanel').innerHTML = renderPrediction(pred, ote);
+    document.getElementById('otePanel').innerHTML = renderOTEZones(ote);
+
+    if (pred.target_1) {
+        document.getElementById('rsiValue').textContent = candles.length > 0 ? (candles[candles.length-1].rsi || '--') : '--';
+    }
+
+    const lastCandle = candles[candles.length - 1];
+    const lastPrice = lastCandle ? lastCandle.c : 0;
+
+    // OTE zone annotations
+    const annotations = {};
+    ote.forEach((z, i) => {
+        const color = z.direction === 'buy' ? 'rgba(63,185,80,0.25)' : 'rgba(248,81,73,0.25)';
+        const borderColor = z.direction === 'buy' ? 'rgba(63,185,80,0.5)' : 'rgba(248,81,73,0.5)';
+        annotations['ote_' + i] = {
+            type: 'box',
+            yMin: z.entry_min, yMax: z.entry_max,
+            backgroundColor: color, borderColor, borderWidth: 1,
+            label: {
+                display: true,
+                content: 'OTE ' + z.direction.toUpperCase() + ' (' + (z.confluence_score || '?') + 'pts)',
+                position: 'start', font: { size: 9 },
+                backgroundColor: borderColor, color: '#fff',
+                xAdjust: 2, yAdjust: 2,
+            }
+        };
+    });
+
+    // FVG zones
+    fvg.forEach((z, i) => {
+        const idx = Math.min(z.idx, candles.length - 1);
+        const fvgColor = z.direction === 'buy' ? 'rgba(63,185,80,0.12)' : 'rgba(248,81,73,0.12)';
+        const fvgBorder = z.direction === 'buy' ? 'rgba(63,185,80,0.3)' : 'rgba(248,81,73,0.3)';
+        annotations['fvg_' + i] = {
+            type: 'box',
+            xMin: Math.max(0, z.idx - 4), xMax: Math.min(candles.length - 1, z.idx + 1),
+            yMin: z.gap_bottom, yMax: z.gap_top,
+            backgroundColor: fvgColor, borderColor: fvgBorder, borderWidth: 1,
+            label: {
+                display: true, content: 'FVG', position: 'start',
+                font: { size: 8 }, backgroundColor: fvgBorder, color: '#fff',
+            }
+        };
+    });
+
+    // Hypothesis arrow from current price to targets
+    if (pred.target_1 && dir !== 'SIDEWAYS' && dir !== 'sideways') {
+        const arrowColor = dir === 'UP' ? 'rgba(63,185,80,0.6)' : 'rgba(248,81,73,0.6)';
+        annotations['hypothesis'] = {
+            type: 'line',
+            xMin: candles.length - 1,
+            xMax: candles.length + 2,
+            yMin: lastPrice,
+            yMax: dir === 'UP' ? Math.max(pred.target_1, pred.target_2 || pred.target_1) : Math.min(pred.target_1, pred.target_2 || pred.target_1),
+            borderColor: arrowColor,
+            borderWidth: 2,
+            borderDash: [6, 4],
+            label: {
+                display: true,
+                content: 'Hipotesis ' + dir.toUpperCase(),
+                position: 'end',
+                font: { size: 10, weight: 'bold' },
+                backgroundColor: arrowColor,
+                color: '#fff',
+                xAdjust: 0, yAdjust: -10,
+            }
+        };
+    }
+
+    const labels = candles.map(c => {
+        const d = new Date(c.t * 1000);
+        return d.toLocaleDateString('es', { month: 'short', day: 'numeric' });
+    });
+
+    // Extend labels for hypothesis projection
+    if (pred.target_1 && dir !== 'SIDEWAYS') {
+        labels.push('Proy.');
+        labels.push('TP');
+    }
+
+    if (miniChartInst) miniChartInst.destroy();
+
+    try {
+        const ctx = document.getElementById('miniChart').getContext('2d');
+        const datasets = [
+            { label: 'BB High', data: candles.map(c => c.bb_h), borderColor: 'rgba(138,180,248,0.15)', backgroundColor: 'rgba(138,180,248,0.15)', borderWidth: 1, pointRadius: 0, fill: false, order: 5 },
+            { label: 'BB Low', data: candles.map(c => c.bb_l), borderColor: 'rgba(138,180,248,0.15)', backgroundColor: 'rgba(138,180,248,0.08)', borderWidth: 1, pointRadius: 0, fill: '-1', order: 5 },
+            { label: 'Close', data: [...candles.map(c => c.c), null, null], borderColor: '#e8eaed', backgroundColor: '#e8eaed', borderWidth: 2, pointRadius: 1, pointHoverRadius: 4, spanGaps: false, order: 4 },
+            { label: 'EMA 9', data: [...candles.map(c => c.e9), null, null], borderColor: 'rgba(255,183,77,0.8)', borderWidth: 1.5, pointRadius: 0, borderDash: [3,3], spanGaps: false, order: 3 },
+            { label: 'EMA 21', data: [...candles.map(c => c.e21), null, null], borderColor: 'rgba(129,199,132,0.8)', borderWidth: 1.5, pointRadius: 0, borderDash: [3,3], spanGaps: false, order: 2 },
+            { label: 'EMA 50', data: [...candles.map(c => c.e50), null, null], borderColor: 'rgba(186,104,200,0.8)', borderWidth: 1.5, pointRadius: 0, borderDash: [3,3], spanGaps: false, order: 1 },
+        ];
+
+        // Hypothesis projection bars (darker area showing where price is expected to go)
+        if (pred.target_1 && dir !== 'SIDEWAYS') {
+            const tp1 = pred.target_1;
+            const tp2 = pred.target_2 || tp1;
+            const tp3 = pred.target_3 || tp2;
+            const isUp = dir === 'UP';
+            // First projected bar (TP1)
+            datasets.push({
+                label: 'Proy. TP1',
+                data: [...new Array(candles.length).fill(null), isUp ? Math.min(tp1, tp2) : Math.max(tp1, tp2), null],
+                backgroundColor: isUp ? 'rgba(63,185,80,0.5)' : 'rgba(248,81,73,0.5)',
+                borderColor: isUp ? 'rgba(63,185,80,0.7)' : 'rgba(248,81,73,0.7)',
+                borderWidth: 2, pointRadius: 6, pointStyle: 'rect', order: 0,
+            });
+            // Second projected bar (TP2/TP3 range)
+            datasets.push({
+                label: 'Proy. TP2-TP3',
+                data: [...new Array(candles.length).fill(null), null, isUp ? tp3 : tp3],
+                backgroundColor: isUp ? 'rgba(63,185,80,0.3)' : 'rgba(248,81,73,0.3)',
+                borderColor: isUp ? 'rgba(63,185,80,0.5)' : 'rgba(248,81,73,0.5)',
+                borderWidth: 2, pointRadius: 8, pointStyle: 'rectRot', order: 0,
+            });
+        }
+
+        datasets.push({
+            label: 'Vol',
+            data: [...candles.map(c => c.v), null, null],
+            type: 'bar',
+            backgroundColor: candles.map(c => c.c >= (candles.find(x => x.t === c.t)?.o || c.c) ? 'rgba(63,185,80,0.35)' : 'rgba(248,81,73,0.35)').concat([null, null]),
+            borderColor: 'transparent', borderWidth: 0, order: 6, yAxisID: 'yVolume',
+        });
+
+        miniChartInst = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: true, labels: { color: '#9aa0a6', boxWidth: 12, padding: 8, font: { size: 10 } } },
+                    annotation: { annotations },
+                },
+                scales: {
+                    x: { display: true, ticks: { color: '#9aa0a6', maxTicksLimit: 14, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                    y: { position: 'right', ticks: { color: '#9aa0a6', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                    yVolume: { position: 'left', display: false, grid: { display: false } },
+                }
+            },
+        });
+    } catch(e) { console.error('Mini chart error:', e); }
+
+    // RSI chart
+    if (rsiChartInst) rsiChartInst.destroy();
+    try {
+        const rsiCtx = document.getElementById('rsiChart').getContext('2d');
+        rsiChartInst = new Chart(rsiCtx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'RSI',
+                    data: candles.map(c => c.rsi),
+                    borderColor: 'rgba(138,180,248,0.9)',
+                    backgroundColor: (ctx) => {
+                        if (!ctx.chart.chartArea) return 'transparent';
+                        const {chart: {chartArea: {top, bottom}}} = ctx;
+                        const g = ctx.chart.ctx.createLinearGradient(0, top, 0, bottom);
+                        g.addColorStop(0, 'rgba(248,81,73,0.15)'); g.addColorStop(0.3, 'rgba(248,81,73,0.05)');
+                        g.addColorStop(0.7, 'rgba(63,185,80,0.05)'); g.addColorStop(1, 'rgba(63,185,80,0.15)');
+                        return g;
+                    }, fill: true, borderWidth: 2, pointRadius: 0,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    annotation: {
+                        annotations: {
+                            ob: { type: 'line', yMin: 70, yMax: 70, borderColor: 'rgba(248,81,73,0.4)', borderWidth: 1, borderDash: [4,4], label: { display: true, content: '70', position: 'start', font: { size: 9 }, color: 'rgba(248,81,73,0.6)' } },
+                            os: { type: 'line', yMin: 30, yMax: 30, borderColor: 'rgba(63,185,80,0.4)', borderWidth: 1, borderDash: [4,4], label: { display: true, content: '30', position: 'start', font: { size: 9 }, color: 'rgba(63,185,80,0.6)' } },
+                            mid: { type: 'line', yMin: 50, yMax: 50, borderColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderDash: [2,2] },
+                        }
+                    }
+                },
+                scales: {
+                    x: { display: false },
+                    y: { min: 0, max: 100, ticks: { color: '#9aa0a6', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                }
+            },
+        });
+    } catch(e) { console.error('RSI chart error:', e); }
+}
+
+function renderPrediction(pred, ote) {
+    if (!pred.direction) return '<div class="text-center py-4 text-secondary">Sin datos suficientes</div>';
+    const dir = pred.direction;
+    const dCls = dir === 'UP' ? 'badge-buy' : dir === 'DOWN' ? 'badge-sell' : 'badge-hold';
+    const dIcon = dir === 'UP' ? 'bi-arrow-up-circle-fill' : dir === 'DOWN' ? 'bi-arrow-down-circle-fill' : 'bi-dash-circle-fill';
+    const dColor = dir === 'UP' ? 'var(--accent-green)' : dir === 'DOWN' ? 'var(--accent-red)' : 'var(--accent-yellow)';
+    const cScore = pred.confluence_score || 50;
+    const scoreCls = cScore >= 60 ? 'signal-buy' : cScore >= 40 ? 'text-secondary' : 'signal-sell';
+    const dTip = `Prediccion: ${dir}\nConfianza: ${pred.confidence ? (pred.confidence*100).toFixed(0) : '--'}%\nScore Confluencia: ${cScore}/100\n\nTEORIA DE PREDICCION:\n${pred.reason || 'No disponible'}\n\nOBJETIVOS:\nTP1: $${pred.target_1?.toFixed(2) || '--'} (primer objetivo)\nTP2: $${pred.target_2?.toFixed(2) || '--'}\nTP3: $${pred.target_3?.toFixed(2) || '--'} (objetivo final)\nStop Loss: $${pred.stop_loss?.toFixed(2) || '--'}`;
+
+    // Confluence score bar
+    const scoreColor = cScore >= 80 ? 'var(--accent-green)' : cScore >= 60 ? '#58a6ff' : cScore >= 40 ? 'var(--accent-yellow)' : 'var(--accent-red)';
+
+    return `
+        <div class="text-center mb-2">
+            <i class="bi ${dIcon}" style="font-size:2.5rem;color:${dColor};cursor:help;" title="${dTip}"></i>
+            <div class="mt-1"><span class="badge ${dCls} fs-5 px-3 py-1" style="cursor:help;" title="${dTip}">${dir}</span></div>
+        </div>
+        <!-- Confluence score -->
+        <div class="mb-2">
+            <div class="d-flex justify-content-between small text-secondary">
+                <span>Score Confluencia</span>
+                <span style="color:${scoreColor};font-weight:700;">${cScore}/100</span>
+            </div>
+            <div class="conf-bar" style="width:100%;height:6px;background:var(--border);border-radius:3px;">
+                <div class="conf-bar" style="width:${cScore}%;height:6px;background:linear-gradient(90deg,var(--accent-red),var(--accent-yellow),${scoreColor});border-radius:3px;"></div>
+            </div>
+        </div>
+        <div class="small mb-2 text-secondary">Confianza: <strong>${(pred.confidence*100).toFixed(0)}%</strong></div>
+        ${pred.target_1 ? `<div class="mb-2 small"><strong class="text-secondary">Objetivos (hipotesis):</strong></div>
+        <div class="d-flex justify-content-between small mb-2">
+            <span class="text-secondary">TP1: <span style="color:${dColor}">$${pred.target_1.toFixed(2)}</span></span>
+            <span class="text-secondary">TP2: <span style="color:${dColor}">$${pred.target_2.toFixed(2)}</span></span>
+            <span class="text-secondary">TP3: <span style="color:${dColor}">$${pred.target_3.toFixed(2)}</span></span>
+        </div>
+        <div class="small mb-2">
+            <span class="text-secondary">Stop Loss: </span>
+            <span style="color:var(--accent-red)">$${pred.stop_loss.toFixed(2)}</span>
+        </div>` : ''}
+        ${pred.reason ? `<div class="small text-secondary mt-2 pt-2 border-top border-secondary" style="border-color:rgba(255,255,255,0.1)!important;">${pred.reason}</div>` : ''}
+    `;
+}
+
+function renderOTEZones(ote) {
+    if (!ote || ote.length === 0) return '<div class="text-center py-3 text-secondary">No se detectaron zonas OTE</div>';
+    return ote.map((z, i) => {
+        const label = z.direction === 'buy' ? 'COMPRA' : 'VENTA';
+        const cls = z.direction === 'buy' ? 'badge-buy' : 'badge-sell';
+        const color = z.direction === 'buy' ? 'var(--accent-green)' : 'var(--accent-red)';
+        const sl = z.strength_label || '--';
+        const slColor = sl === 'Muy Fuerte' ? 'var(--accent-green)' : sl === 'Fuerte' ? '#58a6ff' : sl === 'Moderada' ? 'var(--accent-yellow)' : 'var(--accent-red)';
+        const rr = z.rr_ratio || 0;
+        const arrow = z.hypothesis_arrow === 'up' ? '\u2191' : z.hypothesis_arrow === 'down' ? '\u2193' : '';
+        const er = z.direction === 'buy' ? `$${z.entry_min?.toFixed(2)} - $${z.entry_max?.toFixed(2)}` : `$${z.entry_max?.toFixed(2)} - $${z.entry_min?.toFixed(2)}`;
+        const tip = `Zona OTE ${label}\nEntrada: ${er}\nStop Loss: $${z.stop_loss?.toFixed(2)}\nTP1: $${z.tp1?.toFixed(2)} | TP2: $${z.tp2?.toFixed(2)} | TP3: $${z.tp3?.toFixed(2)}\nR:R: ${rr}:1\nFuerza: ${sl}\nScore Confluencia: ${z.confluence_score || '--'}/100${z.has_trend_filter ? '\nFiltro tendencia: SI' : ''}${z.has_liquidity_sweep ? '\nLiquidity Sweep: SI' : ''}${z.has_cisd ? '\nCISD: SI' : ''}${z.has_volume_confirm ? '\nVol Conf: SI' : ''}\n\nRECOMENDACION:\nSi el precio entra en esta zona, la probabilidad de exito es ${sl === 'Muy Fuerte' ? 'alta (80%+)' : sl === 'Fuerte' ? 'moderada-alta (60-80%)' : sl === 'Moderada' ? 'moderada (40-60%)' : 'baja (<40%)'}.\nStop Loss recomendado en $${z.stop_loss?.toFixed(2)}\nTake Profit 1 en $${z.tp1?.toFixed(2)} (objetivo conservador)\nTake Profit 3 en $${z.tp3?.toFixed(2)} (objetivo optimista)`;
+        return `<div class="mb-2 p-2 rounded ote-card" style="background:rgba(255,255,255,0.03);cursor:help;position:relative;" title="${tip}">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="badge ${cls}">${arrow} ${label}</span>
+                <span class="small" style="color:${slColor};">${sl}</span>
+            </div>
+            ${z.confluence_score ? `<div class="small mt-1">
+                <span class="text-secondary">Score: </span><strong>${z.confluence_score}/100</strong>
+                <span class="text-secondary ms-2">R:R: </span><strong>${rr}:1</strong>
+            </div>` : ''}
+            <div class="small mt-1">
+                <span class="text-secondary">Entrada: </span>
+                <span style="color:${color}">${er}</span>
+            </div>
+            <div class="small">
+                <span class="text-secondary">SL: </span>
+                <span style="color:var(--accent-red)">$${z.stop_loss?.toFixed(2)}</span>
+            </div>
+            <div class="small text-secondary">
+                TP1: $${z.tp1?.toFixed(2)} | TP2: $${z.tp2?.toFixed(2)} | TP3: $${z.tp3?.toFixed(2)}
+            </div>
+            ${z.has_liquidity_sweep ? `<div class="small mt-1"><span class="badge badge-buy" style="font-size:8px;">Sweep OK</span></div>` : ''}
+            ${z.has_cisd ? `<span class="badge badge-buy" style="font-size:8px;">CISD OK</span>` : ''}
+            ${z.has_volume_confirm ? `<span class="badge badge-buy" style="font-size:8px;">Vol OK</span>` : ''}
+            <div class="ote-chart" style="display:none;margin-top:6px;">${oteMiniChart(z, 140, 90)}</div>
+        </div>`;
+    }).join('');
+}
+
+async function analyzeMulti() {
+    const sym = document.getElementById('symbol').value;
+    const btn = document.querySelector('#mainResult');
+    btn.innerHTML = '<div class="loading"></div>';
+    document.getElementById('tvButton').innerHTML =
+        `<a href="${tvLink(sym)}" target="_blank" class="btn btn-outline-secondary py-2 w-100"><i class="bi bi-box-arrow-up-right me-1"></i>Ver en TradingView</a>`;
+
+    try {
+        const [d, r] = await Promise.all([
+            fetch(API_BASE + `/api/analizar/multi?symbol=${sym}`).then(r => r.json()),
+            fetch(API_BASE + `/api/analizar/timeframes?symbol=${sym}`).then(r => r.json()),
+        ]);
+        document.getElementById('results').style.display = 'block';
+
+        const action = d.action || 'hold';
+        const conf = d.confidence || 0;
+        const [color] = sigColor(action);
+
+        if (gaugeFinal) gaugeFinal.destroy();
+        const deg = action === 'buy' ? 0.5 + conf * 0.5 : action === 'sell' ? 0.5 - conf * 0.5 : 0.5;
+        gaugeFinal = new Chart(document.getElementById('gaugeFinal'), {
+            type: 'doughnut',
+            data: { datasets: [{ data: [deg * 180, 180 - deg * 180], backgroundColor: [color, 'var(--border)'], borderWidth: 0, circumference: 180, rotation: 270 }] },
+            options: { responsive: true, maintainAspectRatio: true, cutout: '75%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+        });
+        document.getElementById('finalAction').textContent = action.toUpperCase();
+        document.getElementById('finalAction').style.color = color;
+
+        const aUp = action.toUpperCase();
+        const cls = aUp === 'BUY' ? 'badge-buy' : aUp === 'SELL' ? 'badge-sell' : 'badge-hold';
+        btn.innerHTML = `<span class="badge ${cls} fs-6 px-3 py-2">${aUp} ${(conf*100).toFixed(0)}%</span>`;
+
+        // TF cards
+        const tfs = r.timeframes || {};
+        document.getElementById('tfCards').innerHTML = Object.entries(tfs).map(([tfName, tfData]) => {
+            const a = tfData.action || 'hold';
+            const c = tfData.confidence || 0;
+            const [aClr] = sigColor(a);
+            const comps = (tfData.composites || []).map(cp =>
+                `<span class="badge me-1 ${cp.action === 'buy' ? 'badge-buy' : cp.action === 'sell' ? 'badge-sell' : 'badge-hold'}" style="font-size:0.7rem;padding:4px 10px;">${cp.name.replace(/ *\([^)]*\) */g,'').substring(0,12)}:${(cp.confidence*100).toFixed(0)}%</span>`
+            ).join(' ');
+            return `<div class="col-md-4">
+                <div class="card h-100"><div class="card-body text-center">
+                    <div style="font-size:2.2rem;font-weight:900;color:${aClr};text-shadow:0 0 12px ${aClr}66;">${a.toUpperCase()}</div>
+                    <div style="font-size:0.9rem;color:#e6edf3;font-weight:500;">${tfName}</div>
+                    <div class="mt-2" style="font-size:0.9rem;color:#e6edf3;">Confianza: <strong style="color:${aClr};">${(c*100).toFixed(1)}%</strong> | Net: <strong style="color:#e6edf3;">${(tfData.net || 0).toFixed(3)}</strong></div>
+                    <div class="mt-2 d-flex flex-wrap gap-1 justify-content-center">${comps}</div>
+                </div></div>
+            </div>`;
+        }).join('');
+
+        // Composite breakdown
+        const compsList = Object.values(tfs).flatMap(tf => (tf.composites || []));
+        const compMap = {};
+        compsList.forEach(cp => {
+            if (!compMap[cp.name]) compMap[cp.name] = { buy: 0, sell: 0, conf: 0, count: 0, actions: [] };
+            compMap[cp.name].conf += cp.confidence || 0;
+            compMap[cp.name].count += 1;
+            compMap[cp.name].actions.push(cp.action);
+        });
+        const compAgg = Object.entries(compMap).map(([name, data]) => {
+            const avgConf = data.conf / data.count;
+            const buyCount = data.actions.filter(a => a === 'buy').length;
+            const sellCount = data.actions.filter(a => a === 'sell').length;
+            const action = buyCount > sellCount ? 'buy' : sellCount > buyCount ? 'sell' : 'hold';
+            return { name, action, confidence: avgConf, buy: buyCount, sell: sellCount, total: data.count };
+        }).slice(0, 8);
+
+        document.getElementById('compositeBreakdown').innerHTML = compAgg.map(c => {
+            const aCls = c.action === 'buy' ? 'badge-buy' : c.action === 'sell' ? 'badge-sell' : 'badge-hold';
+            const barColor = c.action === 'buy' ? 'var(--accent-green)' : c.action === 'sell' ? 'var(--accent-red)' : 'var(--accent-yellow)';
+            return `<div class="strategy-row" style="padding:10px 14px;">
+                <div><span class="badge ${aCls} me-2" style="font-size:0.7rem;padding:4px 10px;">${c.action.toUpperCase()}</span><span style="font-weight:600;font-size:0.95rem;">${c.name}</span></div>
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width:120px;"><div class="conf-bar" style="height:10px;border-radius:5px;width:${(c.confidence*100).toFixed(0)}%;background:${barColor};"></div></div>
+                    <span style="font-weight:800;font-size:0.95rem;color:${barColor};min-width:45px;text-align:right;">${(c.confidence*100).toFixed(0)}%</span>
+                    <span style="color:var(--text-secondary);font-size:0.8rem;min-width:30px;">${c.buy}/${c.sell}</span>
+                </div>
+            </div>`;
+        }).join('');
+
+        // Groups
+        const gs = d.group_scores || {};
+        document.getElementById('microTotal').textContent = d.micro_total || 0;
+        document.getElementById('microList').innerHTML = Object.entries(gs).map(([g, score]) => {
+            const action = score > 0.01 ? 'buy' : score < -0.01 ? 'sell' : 'hold';
+            const aCls = action === 'buy' ? 'badge-buy' : action === 'sell' ? 'badge-sell' : 'badge-hold';
+            const barColor = action === 'buy' ? 'var(--accent-green)' : action === 'sell' ? 'var(--accent-red)' : 'var(--accent-yellow)';
+            const scoreStr = score.toFixed(3);
+            return `<div class="strategy-row" style="padding:10px 14px;">
+                <div><span class="badge ${aCls} me-2" style="font-size:0.7rem;padding:4px 10px;">${action.toUpperCase()}</span><span style="font-size:1rem;font-weight:600;">${g}</span></div>
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width:100px;"><div class="conf-bar" style="height:10px;border-radius:5px;width:${Math.min(Math.abs(score*100), 100).toFixed(0)}%;background:${barColor};"></div></div>
+                    <span style="font-weight:800;font-size:1rem;color:${barColor};min-width:60px;text-align:right;">${scoreStr}</span>
+                </div>
+            </div>`;
+        }).join('');
+
+    } catch(e) {
+        btn.innerHTML = '<span class="text-danger">Error al cargar análisis</span>';
+        console.error(e);
+    }
+
+    // Load mini chart separately (errors here won't break the analysis above)
+    try {
+        const g = await (await fetch(API_BASE + `/api/grafico/datos?symbol=${sym}&timeframe=1d`)).json();
+        if (g && g.candles && g.candles.length > 0) renderMiniChart(sym, g);
+    } catch(e) {
+        console.error('Chart load error (non-critical):', e);
+        document.getElementById('chartDirectionBadge').innerHTML = '<span class="text-secondary small">Gráfico no disponible</span>';
+    }
+}
+
+// Auto-analyze if symbol param in URL
+(function() {
+    var params = new URLSearchParams(window.location.search);
+    var sym = params.get('symbol');
+    if (sym) {
+        var sel = document.getElementById('symbol');
+        var iv = setInterval(function() {
+            if (sel.options.length > 1) {
+                clearInterval(iv);
+                sel.value = sym;
+                setTimeout(analyzeMulti, 300);
+            }
+        }, 200);
+    }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,178 @@
+general:
+  name: QuantumTrade Engine
+  version: 1.0.0
+  log_level: INFO
+  data_dir: ./data
+
+server:
+  host: 0.0.0.0
+  port: 8080
+  webhook_secret: "your-webhook-secret-here"
+
+trading:
+  symbols:
+    - AAPL
+    - MSFT
+    - GOOGL
+    - AMZN
+    - NVDA
+    - META
+    - TSLA
+    - AMD
+    - INTC
+    - MU
+    - PLTR
+    - COIN
+    - SPY
+    - QQQ
+    - IWM
+    - DIA
+  timeframe: 15m
+  position_size_pct: 0.02
+  max_positions: 5
+  max_daily_trades: 10
+  default_stop_loss_pct: 0.02
+  default_take_profit_pct: 0.04
+  trailing_stop_pct: 0.015
+  min_confidence: 0.6
+
+strategies:
+  sma_crossover:
+    enabled: true
+    weight: 1.0
+    params:
+      fast_period: 9
+      slow_period: 21
+  rsi_strategy:
+    enabled: true
+    weight: 1.0
+    params:
+      period: 14
+      oversold: 30
+      overbought: 70
+  macd_strategy:
+    enabled: true
+    weight: 1.0
+    params:
+      fast: 12
+      slow: 26
+      signal: 9
+  bollinger_bands:
+    enabled: true
+    weight: 1.0
+    params:
+      period: 20
+      std_dev: 2.0
+  ichimoku_cloud:
+    enabled: true
+    weight: 1.0
+    params:
+      conversion: 9
+      base: 26
+      span_b: 52
+      displacement: 26
+  stochastic_rsi:
+    enabled: true
+    weight: 0.8
+    params:
+      rsi_period: 14
+      stochastic_period: 14
+      k_period: 3
+      d_period: 3
+      oversold: 20
+      overbought: 80
+  adx_strategy:
+    enabled: true
+    weight: 0.8
+    params:
+      period: 14
+      threshold: 25
+  parabolic_sar:
+    enabled: true
+    weight: 0.7
+    params:
+      step: 0.02
+      max_step: 0.2
+  volume_profile:
+    enabled: true
+    weight: 0.7
+    params:
+      lookback: 20
+      volume_threshold: 1.5
+  renko_momentum:
+    enabled: false
+    weight: 0.5
+    params:
+      brick_size: 0.5
+  vwap_reversion:
+    enabled: true
+    weight: 0.9
+    params:
+      std_dev_threshold: 2.0
+      lookback: 20
+  fibonacci_retracement:
+    enabled: true
+    weight: 0.8
+    params:
+      lookback: 50
+      levels: [0.236, 0.382, 0.5, 0.618, 0.786]
+  ema_trend:
+    enabled: true
+    weight: 1.0
+    params:
+      fast_ema: 9
+      medium_ema: 21
+      slow_ema: 50
+  support_resistance:
+    enabled: true
+    weight: 0.8
+    params:
+      lookback: 100
+      proximity_pct: 0.005
+  breakout_strategy:
+    enabled: true
+    weight: 0.9
+    params:
+      lookback: 20
+      breakout_pct: 0.02
+      volume_multiplier: 1.5
+
+risk_management:
+  max_portfolio_risk_pct: 0.02
+  max_position_risk_pct: 0.01
+  max_correlation: 0.7
+  use_trailing_stop: true
+  use_position_sizing: kelly
+  kelly_fraction: 0.25
+  min_account_equity: 25000
+
+ml:
+  enabled: true
+  model_type: xgboost
+  features:
+    - rsi
+    - macd
+    - bb_position
+    - adx
+    - volume_change
+    - price_position
+    - volatility
+    - momentum
+  retrain_interval_hours: 24
+  min_training_samples: 500
+  confidence_threshold: 0.55
+
+backtest:
+  default_start: "2023-01-01"
+  default_end: "2024-01-01"
+  initial_capital: 100000
+  commission_pct: 0.001
+  slippage_pct: 0.001
+  output_dir: ./backtest_results
+
+alpaca:
+  api_key: ""
+  api_secret: ""
+  base_url: "https://paper-api.alpaca.markets"
+  data_url: "https://data.alpaca.markets"
+  paper_trading: true

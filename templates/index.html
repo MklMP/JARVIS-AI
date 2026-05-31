@@ -1,0 +1,3515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="theme-color" content="#00d4ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JARVIS">
+<link rel="manifest" href="/static/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/static/icons/icon.svg">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<title>JARVIS - Asistente Personal</title>
+<style>
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;400;700&display=swap');
+
+:root {
+    --bg: #0a0a1a;
+    --bg-chat: #0d0d18;
+    --bg-card: #111122;
+    --texto: #d0d0e0;
+    --acento: #00d4ff;
+    --acento-oscuro: #0099cc;
+    --verde: #00ff88;
+    --naranja: #ff8800;
+    --rojo: #ff3355;
+    --bor: #1a2a4a;
+    --burbuja-user: #0a1a2a;
+    --burbuja-jarvis: #0d0d1a;
+    --input-bg: #12121e;
+    --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+    --font-display: 'Orbitron', sans-serif;
+    --grad-1: #0b0b2b;
+    --grad-2: #1a0a3a;
+    --grad-3: #2a0a2a;
+}
+
+html, body {
+    height: 100%;
+    background: linear-gradient(135deg, var(--grad-1) 0%, var(--grad-2) 50%, var(--grad-3) 100%);
+    background-attachment: fixed;
+    color: var(--texto);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.5;
+    overflow: hidden;
+}
+
+/* ============================================================
+   ANIMATED BACKGROUND (particle grid)
+   ============================================================ */
+#bg-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* ============================================================
+   SCANLINE OVERLAY
+   ============================================================ */
+.scanlines {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 212, 255, 0.015) 2px,
+        rgba(0, 212, 255, 0.015) 4px
+    );
+}
+
+/* ============================================================
+   ANIMATED GRADIENT BG
+   ============================================================ */
+#gradient-bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    background: linear-gradient(135deg, #0a0a2e, #1a0a3a, #2a0a2a, #1a0a3a, #0a0a2e);
+    background-size: 400% 400%;
+    animation: gradient-shift 15s ease infinite;
+}
+
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* ============================================================
+   SPLASH / STARTUP — Explosive
+   ============================================================ */
+#splash {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, #0d0d2b 0%, #050510 100%);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+    overflow: hidden;
+}
+
+#splash::before {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    top: -50%;
+    left: -50%;
+    background:
+        radial-gradient(2px 2px at 20% 30%, rgba(0, 212, 255, 0.3), transparent),
+        radial-gradient(2px 2px at 40% 70%, rgba(168, 85, 247, 0.2), transparent),
+        radial-gradient(2px 2px at 60% 20%, rgba(236, 72, 153, 0.3), transparent),
+        radial-gradient(2px 2px at 80% 80%, rgba(0, 212, 255, 0.2), transparent),
+        radial-gradient(1px 1px at 10% 90%, rgba(255, 255, 255, 0.4), transparent),
+        radial-gradient(1px 1px at 90% 10%, rgba(255, 255, 255, 0.4), transparent),
+        radial-gradient(1px 1px at 50% 50%, rgba(255, 255, 255, 0.5), transparent);
+    background-size: 200px 200px;
+    animation: splash-stars 4s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes splash-stars {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(-50px, -50px); }
+}
+
+/* Energy beams from corners */
+#splash::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        linear-gradient(135deg, rgba(0, 212, 255, 0.06) 0%, transparent 40%),
+        linear-gradient(225deg, rgba(168, 85, 247, 0.06) 0%, transparent 40%),
+        linear-gradient(315deg, rgba(236, 72, 153, 0.06) 0%, transparent 40%),
+        linear-gradient(45deg, rgba(0, 212, 255, 0.04) 0%, transparent 40%);
+    pointer-events: none;
+    animation: splash-beams 3s ease-in-out infinite;
+}
+
+@keyframes splash-beams {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+}
+
+#splash.hidden {
+    opacity: 0;
+    transform: scale(1.3);
+    pointer-events: none;
+}
+
+.splash-ring {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    margin-bottom: 32px;
+}
+
+/* Multiple concentric rings */
+.splash-ring-ring {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid transparent;
+}
+
+.splash-ring-ring:nth-child(1) {
+    border-color: rgba(0, 212, 255, 0.15);
+    animation: splash-ring-pulse 2s ease-in-out infinite;
+}
+
+.splash-ring-ring:nth-child(2) {
+    width: 80%;
+    height: 80%;
+    top: 10%;
+    left: 10%;
+    border-color: rgba(168, 85, 247, 0.12);
+    animation: splash-ring-pulse 2s ease-in-out 0.3s infinite;
+}
+
+.splash-ring-ring:nth-child(3) {
+    width: 60%;
+    height: 60%;
+    top: 20%;
+    left: 20%;
+    border-color: rgba(236, 72, 153, 0.1);
+    animation: splash-ring-pulse 2s ease-in-out 0.6s infinite;
+}
+
+@keyframes splash-ring-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.15); opacity: 0.2; }
+}
+
+.splash-ring svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    animation: splash-spin 1.5s linear infinite;
+    filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.3));
+}
+
+@keyframes splash-spin {
+    100% { transform: rotate(360deg); }
+}
+
+.splash-ring .ring-bg {
+    fill: none;
+    stroke: rgba(255,255,255,0.04);
+    stroke-width: 2;
+}
+
+.splash-ring .ring-fg {
+    fill: none;
+    stroke: url(#splash-grad);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 283;
+    stroke-dashoffset: 75;
+    animation: ring-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes ring-pulse {
+    0%, 100% { stroke-dashoffset: 75; filter: drop-shadow(0 0 4px rgba(0, 212, 255, 0.3)); }
+    50% { stroke-dashoffset: 200; filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.8)); }
+}
+
+/* Arc reactor glow */
+.splash-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120px;
+    height: 120px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 212, 255, 0.15) 0%, transparent 70%);
+    animation: splash-glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes splash-glow-pulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.5; }
+    50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+}
+
+.splash-logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: 8px;
+    background: linear-gradient(135deg, #00d4ff, #a855f7, #ec4899, #f59e0b, #00d4ff);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: logo-gradient-shift 6s ease infinite;
+    text-shadow: 0 0 40px rgba(0, 212, 255, 0.3);
+    z-index: 2;
+}
+
+@keyframes logo-gradient-shift {
+    0% { background-position: 0% 50%; }
+    25% { background-position: 100% 0%; }
+    50% { background-position: 100% 100%; }
+    75% { background-position: 0% 100%; }
+    100% { background-position: 0% 50%; }
+}
+
+.splash-text {
+    font-family: var(--font-display);
+    font-size: 16px;
+    letter-spacing: 4px;
+    color: rgba(255,255,255,0.5);
+    animation: splash-text-glow 1.5s ease-in-out infinite;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+}
+
+@keyframes splash-text-glow {
+    0%, 100% { opacity: 0.5; text-shadow: 0 0 5px rgba(0, 212, 255, 0.1); }
+    50% { opacity: 1; text-shadow: 0 0 20px rgba(0, 212, 255, 0.4); }
+}
+
+/* Scanning line */
+.splash-scan {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.6), transparent);
+    animation: splash-scan 3s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes splash-scan {
+    0% { top: -2px; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+}
+
+#splash.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.splash-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin-bottom: 32px;
+}
+
+.splash-ring svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    animation: splash-spin 2s linear infinite;
+}
+
+@keyframes splash-spin {
+    100% { transform: rotate(360deg); }
+}
+
+.splash-ring .ring-bg {
+    fill: none;
+    stroke: rgba(255,255,255,0.05);
+    stroke-width: 3;
+}
+
+.splash-ring .ring-fg {
+    fill: none;
+    stroke: url(#splash-grad);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 283;
+    stroke-dashoffset: 75;
+    animation: ring-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ring-pulse {
+    0%, 100% { stroke-dashoffset: 75; }
+    50% { stroke-dashoffset: 200; }
+}
+
+.splash-logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    background: linear-gradient(135deg, #00d4ff, #a855f7, #ec4899, #f59e0b, #00d4ff);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: logo-gradient-shift 6s ease infinite;
+}
+
+.splash-text {
+    font-family: var(--font-display);
+    font-size: 16px;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.6);
+    animation: splash-blink 2s ease-in-out infinite;
+}
+
+@keyframes splash-blink {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.app {
+    position: relative;
+    z-index: 2;
+    display: none;
+    flex-direction: row;
+    height: 100vh;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0;
+    background: rgba(5, 5, 20, 0.4);
+    backdrop-filter: blur(2px);
+    border-left: 1px solid rgba(168, 85, 247, 0.08);
+    border-right: 1px solid rgba(236, 72, 153, 0.08);
+}
+.app.visible {
+    display: flex;
+}
+.app-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 0 16px;
+    transition: padding-left 0.3s ease;
+}
+body:not(.sidebar-collapsed) .app-main { padding-left:58px; }
+body.sidebar-collapsed .app-main { padding-left:16px; }
+
+.app.visible {
+    display: flex;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0 12px;
+    border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+    flex-shrink: 0;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #00d4ff, #a855f7, #ec4899, #f59e0b, #00d4ff);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: logo-gradient-shift 10s ease infinite;
+    text-shadow: none;
+    letter-spacing: 4px;
+    filter: drop-shadow(0 0 20px rgba(168,85,247,0.3));
+}
+
+.logo-sub {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 0.5px;
+    margin-left: 2px;
+    align-self: flex-end;
+    padding-bottom: 2px;
+}
+
+.logo-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--verde);
+    margin-right: 8px;
+    animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--verde); }
+    50% { opacity: 0.5; box-shadow: 0 0 2px var(--verde); }
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 11px;
+    position: relative;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0.7;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--verde);
+}
+
+.status-dot.off { background: var(--naranja); }
+
+/* ============================================================
+   SESIONES
+   ============================================================ */
+.session-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    opacity: 0.8;
+    font-size: 11px;
+    padding: 2px 8px;
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 4px;
+    transition: 0.15s;
+    user-select: none;
+    position: relative;
+}
+.session-btn:hover {
+    opacity: 1;
+    border-color: var(--cyan);
+    background: rgba(0, 212, 255, 0.05);
+}
+.session-arrow {
+    font-size: 8px;
+    opacity: 0.6;
+}
+.session-panel {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    min-width: 220px;
+    background: rgba(10, 14, 23, 0.97);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 6px;
+    z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+.session-panel.show {
+    display: block;
+}
+.session-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--cyan);
+}
+.session-new {
+    background: none;
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    color: var(--cyan);
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 5px;
+    transition: 0.15s;
+}
+.session-new:hover {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: var(--cyan);
+}
+.session-list {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 4px 0;
+}
+.session-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: 0.1s;
+    border-left: 2px solid transparent;
+}
+.session-item:hover {
+    background: rgba(0, 212, 255, 0.05);
+}
+.session-item.active {
+    border-left-color: var(--cyan);
+    background: rgba(0, 212, 255, 0.08);
+    color: var(--cyan);
+}
+.session-item-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.session-item-count {
+    font-size: 10px;
+    opacity: 0.4;
+    margin-left: 8px;
+}
+.session-item-del {
+    background: none;
+    border: none;
+    color: rgba(255, 80, 80, 0.4);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 2px;
+    margin-left: 4px;
+    line-height: 1;
+    display: none;
+}
+.session-item:hover .session-item-del {
+    display: inline;
+}
+.session-item-del:hover {
+    color: rgba(255, 80, 80, 0.9);
+}
+.session-rename-input {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--cyan);
+    color: var(--texto);
+    font-size: 12px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    width: 100%;
+    outline: none;
+}
+
+/* ============================================================
+   CHAT AREA
+   ============================================================ */
+.chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 0;
+    scroll-behavior: smooth;
+}
+
+.chat::-webkit-scrollbar {
+    width: 4px;
+}
+
+.chat::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #a855f7, #ec4899);
+    border-radius: 2px;
+}
+
+/* ============================================================
+   MESSAGES
+   ============================================================ */
+.msg {
+    position: relative;
+    margin-bottom: 12px;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: msg-in 0.3s ease forwards;
+}
+
+@keyframes msg-in {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.msg-time {
+    font-size: 10px;
+    color: rgba(255,255,255,0.25);
+    margin-bottom: 4px;
+    padding-left: 4px;
+}
+
+.msg-copy {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.2);
+    cursor: pointer;
+    font-size: 11px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.2s, color 0.2s;
+}
+.msg:hover .msg-copy {
+    opacity: 1;
+}
+.msg-copy:hover {
+    color: rgba(255,255,255,0.7);
+    background: rgba(255,255,255,0.08);
+}
+
+.msg-bubble {
+    display: inline-block;
+    max-width: 85%;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.msg.user {
+    text-align: right;
+}
+
+.msg.user .msg-bubble {
+    background: linear-gradient(135deg, #0a1a2a, #0d2a3a);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    color: var(--verde);
+    text-align: left;
+    border-radius: 8px 8px 2px 8px;
+}
+
+.msg.jarvis .msg-bubble {
+    background: linear-gradient(135deg, #0d0d1a, #111128);
+    border: 1px solid rgba(0, 212, 255, 0.1);
+    color: var(--texto);
+    text-align: left;
+    border-radius: 8px 8px 8px 2px;
+}
+
+.msg.jarvis .msg-bubble .title-line {
+    color: var(--morado);
+    font-weight: bold;
+}
+
+.msg-link {
+    color: #0078d4;
+    text-decoration: underline;
+    font-size: 12px;
+    display: inline-block;
+    margin-top: 2px;
+    word-break: break-all;
+}
+.msg-link:hover {
+    text-decoration: underline;
+    color: #106ebe;
+}
+
+/* ============================================================
+   TYPING INDICATOR
+   ============================================================ */
+.typing {
+    display: none;
+    padding: 8px 0;
+}
+
+.typing.active { display: flex; }
+
+.typing-dots {
+    display: flex;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--burbuja-jarvis);
+    border: 1px solid rgba(168, 85, 247, 0.15);
+    border-radius: 12px;
+}
+
+.typing-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: typing-bounce 1.4s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(1) { background: #00d4ff; }
+.typing-dot:nth-child(2) { background: #a855f7; }
+.typing-dot:nth-child(3) { background: #ec4899; }
+
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing-bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+    30% { transform: translateY(-8px); opacity: 1; }
+}
+
+/* ============================================================
+   INPUT AREA
+   ============================================================ */
+.input-area {
+    position: relative;
+    flex-shrink: 0;
+    padding: 12px 0 20px;
+    border-top: 1px solid rgba(168, 85, 247, 0.15);
+}
+
+.input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.input-row input {
+    flex: 1;
+    padding: 12px 16px;
+    background: rgba(10, 10, 30, 0.7);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: 8px;
+    color: var(--texto);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.input-row input:focus {
+    border-color: #a855f7;
+    box-shadow: 0 0 20px rgba(168,85,247,0.1);
+}
+
+.input-row input::placeholder {
+    color: rgba(255,255,255,0.15);
+}
+
+.btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: 8px;
+    background: rgba(10, 10, 30, 0.7);
+    color: var(--texto);
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.btn:hover {
+    background: rgba(168, 85, 247, 0.2);
+    border-color: #a855f7;
+    color: #fff;
+}
+
+.btn-mic {
+    position: relative;
+}
+
+.btn-mic.listening {
+    background: var(--rojo);
+    border-color: var(--rojo);
+    color: #fff;
+    animation: mic-pulse 1s ease-in-out infinite;
+}
+
+@keyframes mic-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 51, 85, 0.4); }
+    50% { box-shadow: 0 0 20px 8px rgba(255, 51, 85, 0.15); }
+}
+
+.btn-mic.wakeword-idle {
+    border-color: rgba(0, 220, 80, 0.3);
+    box-shadow: 0 0 6px rgba(0, 220, 80, 0.08);
+}
+
+.btn-mic.wakeword-active {
+    background: rgba(0, 200, 80, 0.25);
+    border-color: #00c850;
+    animation: wake-pulse 0.5s ease-in-out 2;
+}
+
+@keyframes wake-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0, 200, 80, 0.5); }
+    50% { box-shadow: 0 0 24px 10px rgba(0, 200, 80, 0.12); }
+}
+
+.btn-voice {
+    font-size: 16px;
+}
+
+.btn-voice.off {
+    opacity: 0.4;
+    border-color: rgba(255,255,255,0.05);
+}
+
+#drop-overlay {
+    display: none;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(168,85,247,0.06);
+    border: 3px dashed #a855f7;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #c084fc;
+    backdrop-filter: blur(4px);
+}
+#drop-overlay.show { display: flex; }
+#drop-overlay span { background: rgba(5,5,20,0.9); padding: 24px 40px; border-radius: 12px; border: 1px solid rgba(168,85,247,0.3); }
+
+.btn-send {
+    background: linear-gradient(135deg, #00d4ff, #a855f7);
+    color: #fff;
+}
+
+.btn-send:hover {
+    background: linear-gradient(135deg, #a855f7, #ec4899);
+}
+
+.btn-file {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 10px;
+}
+.btn-file:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.input-hint {
+    color: var(--gris);
+    font-size: 11px;
+    margin-top: 6px;
+    text-align: center;
+    opacity: 0.6;
+    user-select: none;
+}
+
+/* ---- COMMAND PALETTE ---- */
+.cmd-palette {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(20, 20, 40, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px 8px 0 0;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+}
+
+.cmd-palette.open {
+    display: block;
+}
+
+.cmd-palette-header {
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--gris);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.cmd-palette-list {
+    padding: 4px 0;
+}
+
+.cmd-palette-item {
+    padding: 7px 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #ccc;
+    transition: background 0.1s;
+}
+
+.cmd-palette-item:hover,
+.cmd-palette-item.selected {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.cmd-palette-item .cmd-icon {
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.cmd-palette-item .cmd-desc {
+    color: var(--gris);
+    font-size: 11px;
+    margin-left: auto;
+    opacity: 0.7;
+}
+
+.cmd-palette::-webkit-scrollbar {
+    width: 4px;
+}
+.cmd-palette::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px;
+}
+
+/* ============================================================
+   ENGINE SELECTOR (replaces command suggestions)
+   ============================================================ */
+.engine-selector {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 0 0;
+}
+
+.engine-label {
+    font-size: 11px;
+    opacity: 0.4;
+    margin-right: 2px;
+}
+
+.engine-chip {
+    padding: 3px 10px;
+    font-size: 10px;
+    background: rgba(168, 85, 247, 0.03);
+    border: 1px solid rgba(168, 85, 247, 0.08);
+    border-radius: 12px;
+    color: rgba(255,255,255,0.25);
+    cursor: pointer;
+    transition: all 0.25s;
+    user-select: none;
+}
+
+.engine-chip:hover {
+    background: rgba(168, 85, 247, 0.1);
+    border-color: rgba(168, 85, 247, 0.2);
+    color: rgba(255,255,255,0.5);
+}
+
+.engine-chip.on {
+    color: var(--acento);
+    background: rgba(0, 212, 255, 0.08);
+    border-color: rgba(0, 212, 255, 0.2);
+    box-shadow: 0 0 6px rgba(0, 212, 255, 0.05);
+}
+
+.engine-chip.used {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+}
+
+.voice-selector {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    margin-bottom: 2px;
+}
+
+.voice-dropdown {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ccc;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    max-width: 260px;
+}
+
+.voice-dropdown:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.voice-dropdown option {
+    background: #1a1a2e;
+    color: #ccc;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 640px) {
+    .app { padding: 0 8px; flex-direction:column; }
+    .estrategias-content { width:100%; }
+    .estrategias-content.visible { display:flex; width:100%; }
+    .app-main { flex: none; }
+    .logo { font-size: 16px; letter-spacing: 2px; }
+    .header-right .status-item span { display: none; }
+    .msg-bubble { max-width: 92%; font-size: 12px; }
+    .input-row input { font-size: 12px; padding: 10px 12px; }
+    .btn { width: 40px; height: 40px; }
+    .splash-ring { width: 80px; height: 80px; }
+    .splash-logo { font-size: 20px; letter-spacing: 4px; }
+    .splash-text { font-size: 13px; }
+}
+@media (min-width: 641px) and (max-width: 1024px) {
+    .estrategias-content { width:320px; }
+}
+
+/* ── Panel Sardiñas ── */
+.sardiñas-paso {
+  background: #13131f;
+  margin: 10px 0;
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 5px solid #444;
+  transition: border-color 0.3s;
+  font-size: 13px;
+}
+.sardiñas-paso.completado { border-color: #00ff88; }
+.sardiñas-paso.en_progreso { border-color: #ffaa00; }
+.sardiñas-paso.saltado { border-color: #ff4444; }
+.grafico-img { width:100%; border-radius:5px; margin-top:5px; }
+.sardiñas-link { color:#00d4ff; text-decoration:none; font-size:0.9em; display:inline-block; margin:2px 0; }
+.sardiñas-link:hover { text-decoration:underline; }
+.est-boton.activo { background:#00d4ff !important; color:#000 !important; border-color:#00d4ff !important; font-weight:bold; }
+.progress-container { width:100%; height:12px; background:#13131f; border-radius:6px; overflow:hidden; margin:8px 0; border:1px solid #333; }
+.progress-bar { height:100%; background:linear-gradient(90deg,#00d4ff,#00ff88); border-radius:6px; transition:width 0.3s ease; }
+
+/* ── Left sidebar Trading System ── */
+#ts-sidebar {
+  position:fixed; left:0; top:0; width:42px; height:100vh;
+  background:#0a0a12; border-right:1px solid #1a2a4a;
+  z-index:10001; display:flex; flex-direction:column; align-items:center;
+  padding:8px 0; gap:4px; transition:transform 0.3s ease;
+}
+#ts-sidebar.collapsed { transform:translateX(-42px); }
+#ts-sidebar-toggle {
+  position:fixed; left:0; top:50%; z-index:10002;
+  width:16px; height:48px; background:#0a0a12; border:1px solid #1a2a4a;
+  border-left:none; border-radius:0 6px 6px 0; color:#888;
+  cursor:pointer; font-size:8px; display:flex; align-items:center; justify-content:center;
+  transition:left 0.3s ease, background 0.2s; padding:0;
+  transform:translateY(-50%);
+}
+#ts-sidebar-toggle:hover { background:#1a1a2e; color:#00d4ff; }
+#ts-sidebar.collapsed + #ts-sidebar-toggle { left:0; }
+#ts-sidebar:not(.collapsed) + #ts-sidebar-toggle,
+#ts-sidebar-toggle.shifted { left:42px; }
+#ts-sidebar-toggle svg { transition:transform 0.3s; }
+#ts-sidebar.collapsed + #ts-sidebar-toggle svg { transform:rotate(180deg); }
+body.sidebar-collapsed #ts-sidebar-toggle svg { transform:rotate(180deg); }
+#ts-sidebar button {
+  width:34px; height:34px; background:#13131f; border:1px solid #1a2a4a;
+  border-radius:6px; color:#888; cursor:pointer; font-size:10px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  transition:all 0.2s; padding:2px;
+}
+#ts-sidebar button:hover { background:#1a1a2e; color:#00d4ff; border-color:#00d4ff44; }
+#ts-sidebar button.activo { background:#00d4ff22; color:#00d4ff; border-color:#00d4ff; }
+.ts-sidebar-label { font-size:6px; line-height:1; margin-top:1px; text-transform:uppercase; letter-spacing:0.5px; }
+
+/* ── Right content panel (estrategias) ── */
+.estrategias-content {
+  display:none;
+  width:340px; min-width:340px; max-width:340px;
+  background:#08081a; border-left:1px solid #1a2a4a;
+  flex-direction:column; overflow:hidden;
+}
+.estrategias-content.visible { display:flex; }
+.estrategias-content-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 12px; border-bottom:1px solid #1a2a4a;
+  color:#00d4ff; font-size:11px; font-weight:bold; letter-spacing:1px;
+  flex-shrink:0;
+}
+.estrategias-content-close {
+  background:none; border:none; color:#666; cursor:pointer; font-size:14px; padding:2px 4px;
+}
+.estrategias-content-close:hover { color:#ff4444; }
+.estrategias-content-body {
+  flex:1; display:flex; flex-direction:column; overflow:hidden; padding:10px; font-size:12px;
+}
+.estrategias-content-body::-webkit-scrollbar { width:3px; }
+.estrategias-content-body::-webkit-scrollbar-thumb { background:#333; border-radius:2px; }
+.estrategias-input-row {
+  display:none; gap:5px; padding:8px 10px; border-bottom:1px solid #1a2a4a;
+  flex-shrink:0;
+}
+.estrategias-input-row input {
+  flex:1; padding:5px 8px; background:#13131f; border:1px solid #333;
+  border-radius:4px; color:white; font-size:0.75em; outline:none;
+}
+.estrategias-input-row input:focus { border-color:#00d4ff; }
+.estrategias-input-row button {
+  padding:5px 10px; background:#00d4ff; border:none; border-radius:4px;
+  color:#000; cursor:pointer; font-weight:bold; font-size:0.75em;
+}
+.loading { width:20px; height:20px; border:2px solid #333; border-top-color:#00d4ff; border-radius:50%; animation:spin-loading 0.7s linear infinite; display:inline-block; }
+@keyframes spin-loading { to { transform:rotate(360deg); } }
+
+/* ── Trading System iframe inside panel ── */
+.ts-iframe {
+  width:100%; flex:1; min-height:0; border:none; border-radius:4px;
+  background:#000; align-self:stretch;
+}
+
+/* ── Resultados tabla mejorada ── */
+.resultados-summary {
+  color:#00ff88; font-size:0.85em; margin:5px 0; padding:6px 10px;
+  background:#0d0d1a; border-radius:4px; border:1px solid #00ff8822;
+}
+.resultados-lista { max-height:400px; overflow-y:auto; }
+.resultado-item {
+  background:#13131f; margin:6px 0; padding:8px 10px; border-radius:6px;
+  border-left:3px solid #00d4ff; font-size:0.85em;
+  transition: border-color 0.2s, background 0.2s;
+}
+.resultado-item:hover { background:#1a1a2e; border-left-color:#00ff88; }
+.resultado-header {
+  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+}
+.resultado-rank { color:#00d4ff; font-weight:bold; min-width:24px; }
+.resultado-sym { color:white; font-size:1em; }
+.resultado-precio { color:#aaa; font-size:0.9em; }
+.resultado-dir { font-weight:bold; font-size:0.85em; margin-left:auto; }
+.resultado-detalles {
+  display:flex; gap:4px; flex-wrap:wrap; margin-top:4px;
+}
+.resultado-badge {
+  display:inline-block; padding:1px 6px; border-radius:3px; font-size:0.75em;
+  background:#0d0d1a; border:1px solid #333;
+}
+.vol-badge { color:#00d4ff; border-color:#00d4ff44; }
+.rsi-badge { color:#ffaa00; border-color:#ffaa0044; }
+.score-badge { color:#00ff88; border-color:#00ff8844; }
+.resultado-niveles {
+  display:flex; gap:4px; flex-wrap:wrap; margin-top:4px; font-size:0.8em;
+  padding:4px 6px; background:#0a0a12; border-radius:4px;
+}
+.nv-entry { color:#00d4ff; }
+.nv-sl { color:#ff4444; }
+.nv-tp { color:#00ff88; }
+.nv-rr { color:#ffaa00; }
+.resultado-nota {
+  font-size:0.75em; color:#ffaa00; margin-top:3px;
+  padding:2px 6px; background:#ffaa0011; border-radius:3px;
+}
+
+/* ── Animación screener flash ── */
+@keyframes screener-flash {
+  0% { box-shadow: 0 0 0 rgba(0,255,136,0); }
+  30% { box-shadow: 0 0 20px rgba(0,255,136,0.8), 0 0 60px rgba(0,255,136,0.3); }
+  70% { box-shadow: 0 0 10px rgba(0,255,136,0.4); }
+  100% { box-shadow: 0 0 0 rgba(0,255,136,0); }
+}
+</style>
+</head>
+<body>
+
+<div id="gradient-bg"></div>
+<canvas id="bg-canvas"></canvas>
+<div class="scanlines"></div>
+
+<svg style="position:absolute;width:0;height:0">
+    <defs>
+        <linearGradient id="splash-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#00d4ff"/>
+            <stop offset="50%" stop-color="#a855f7"/>
+            <stop offset="100%" stop-color="#ec4899"/>
+        </linearGradient>
+    </defs>
+</svg>
+
+<div id="splash">
+    <div class="splash-scan"></div>
+    <div class="splash-ring">
+        <div class="splash-ring-ring"></div>
+        <div class="splash-ring-ring"></div>
+        <div class="splash-ring-ring"></div>
+        <div class="splash-glow"></div>
+        <svg viewBox="0 0 100 100">
+            <circle class="ring-bg" cx="50" cy="50" r="45"/>
+            <circle class="ring-fg" cx="50" cy="50" r="45"/>
+        </svg>
+        <div class="splash-logo">JARVIS</div>
+    </div>
+    <div class="splash-text">Inicializando sistemas...</div>
+</div>
+
+<div class="app">
+
+    <div class="app-main">
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <span class="logo-dot"></span>
+            <span class="logo">JARVIS</span>
+            <span class="logo-sub">by Maykel Millán</span>
+        </div>
+        <div class="header-right">
+            <div class="status-item">
+                <span class="status-dot" id="status-dot"></span>
+                <span id="status-text">INICIANDO</span>
+            </div>
+            <div class="status-item">
+                <span id="mod-count">0</span>
+                <span>módulos</span>
+            </div>
+            <div class="status-item">
+                <span id="tts-status">TTS:</span>
+            </div>
+            <div class="status-item">
+                <span id="stt-status">STT:</span>
+            </div>
+            <div class="session-btn" id="session-btn" title="Cambiar sesión">
+                <span id="session-name">Principal</span>
+                <span class="session-arrow">▾</span>
+            </div>
+            <div class="session-panel" id="session-panel">
+                <div class="session-panel-header">
+                    <span>Sesiones</span>
+                    <button class="session-new" id="session-new" title="Nueva sesión">+</button>
+                </div>
+                <div class="session-list" id="session-list"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CHAT -->
+    <div class="chat" id="chat">
+        <div class="typing" id="typing">
+            <div class="typing-dots">
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- INPUT -->
+    <div class="input-area">
+        <!-- COMMAND PALETTE -->
+        <div class="cmd-palette" id="cmd-palette">
+            <div class="cmd-palette-header">Comandos</div>
+            <div class="cmd-palette-list" id="cmd-palette-list"></div>
+        </div>
+        <div class="input-row">
+            <button class="btn btn-mic" id="btn-mic" title="Activar voz (Ctrl+M)">🎤</button>
+
+            <button class="btn btn-voice" id="btn-voice" title="Alternar TTS">🔊</button>
+
+            <button class="btn btn-file" id="btn-file" title="Subir archivo">📎</button>
+            <input type="file" id="file-input" style="display:none">
+            <input type="text" id="input" placeholder="Escribe un comando / para lista, o presiona 🎤..." autofocus>
+            <button class="btn btn-send" id="btn-send" title="Enviar (Enter)">></button>
+        </div>
+        <div class="engine-selector" id="engine-selector">
+            <span class="engine-label">[B]</span>
+            <span class="engine-chip" data-engine="duckduckgo" id="engine-ddg">DuckDuckGo</span>
+            <span class="engine-chip" data-engine="wikipedia" id="engine-wiki">Wikipedia</span>
+            <span class="engine-chip" data-engine="openrouter" id="engine-or">OpenRouter</span>
+            <span class="engine-chip" data-engine="yahoofinance" id="engine-yf">Yahoo Finance</span>
+            <span class="engine-chip" data-engine="bloomberg" id="engine-bb">Bloomberg</span>
+            <span class="engine-chip" data-engine="investing" id="engine-inv">Investing.com</span>
+            <span class="engine-chip" data-engine="youtube" id="engine-yt">YouTube</span>
+            <span class="engine-chip" data-engine="reddit" id="engine-reddit">Reddit</span>
+        </div>
+        <div class="voice-selector" id="voice-selector">
+            <span class="engine-label">[V]</span>
+            <select id="voice-select" class="voice-dropdown"></select>
+        </div>
+        <div class="input-hint">Ctrl+M · Ctrl+L · Ctrl+Q · Arrastra una foto</div>
+    </div>
+
+</div><!-- /.app-main -->
+
+<!-- RIGHT PANEL: Contenido de estrategias (aparece al hacer clic en sidebar) -->
+<div id="estrategias-content" class="estrategias-content">
+  <div class="estrategias-content-header">
+    <span id="estrategias-content-title">ESTRATEGIA</span>
+    <button class="estrategias-content-close" onclick="cerrarPanelEstrategias()" title="Cerrar panel">✕</button>
+  </div>
+  <div id="est-input-row" class="estrategias-input-row" style="display:none;">
+    <input type="text" id="est-input-symbol" placeholder="Símbolo (ej: AAPL)" onkeydown="if(event.key==='Enter') document.getElementById('est-input-go').click()">
+    <button id="est-input-go" onclick="EstrategiasPanel.abrir('sardinas', document.getElementById('est-input-symbol').value.toUpperCase())">IR</button>
+  </div>
+  <div id="panel-estrategias-contenido" class="estrategias-content-body"></div>
+</div>
+
+</div><!-- /.app -->
+
+<div id="drop-overlay"><span> 📎 Suelta el archivo para analizar (foto -> metadatos, otro -> VirusTotal)</span></div>
+
+<script>
+// ============================================================
+// BACKGROUND PARTICLES - Adaptativas + interacción mouse
+// ============================================================
+(function() {
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let mouse = { x: -9999, y: -9999, prevX: -9999, prevY: -9999 };
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        // Calcular cantidad de partículas según resolución
+        const area = canvas.width * canvas.height;
+        const targetCount = Math.max(80, Math.min(250, Math.round(area / 6000)));
+        while (particles.length < targetCount) particles.push(new Particle());
+        while (particles.length > targetCount) particles.pop();
+    }
+
+    // Mouse tracking
+    document.addEventListener('mousemove', (e) => {
+        mouse.prevX = mouse.x;
+        mouse.prevY = mouse.y;
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+    });
+    document.addEventListener('mouseleave', () => {
+        mouse.x = -9999;
+        mouse.y = -9999;
+    });
+
+    class Particle {
+        constructor() { this.reset(); }
+        reset() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.size = Math.random() * 2 + 0.5;
+            this.speedX = (Math.random() - 0.5) * 0.4;
+            this.speedY = (Math.random() - 0.5) * 0.4;
+            this.alpha = Math.random() * 0.5 + 0.15;
+            this.baseAlpha = this.alpha;
+            this.hue = 200 + Math.random() * 180;
+        }
+        update() {
+            // Movimiento normal
+            this.x += this.speedX;
+            this.y += this.speedY;
+
+            // Repeler del mouse
+            const dx = this.x - mouse.x;
+            const dy = this.y - mouse.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const repelRadius = 120;
+            if (dist < repelRadius && dist > 0) {
+                const force = (repelRadius - dist) / repelRadius;
+                this.x += (dx / dist) * force * 2;
+                this.y += (dy / dist) * force * 2;
+                this.alpha = Math.min(1, this.baseAlpha + force * 0.6);
+            } else {
+                this.alpha += (this.baseAlpha - this.alpha) * 0.05;
+            }
+
+            // Bordes
+            if (this.x < -10 || this.x > canvas.width + 10) this.reset();
+            if (this.y < -10 || this.y > canvas.height + 10) this.reset();
+        }
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${this.hue}, 80%, 60%, ${Math.max(0, this.alpha)})`;
+            ctx.fill();
+        }
+    }
+
+    for (let i = 0; i < Math.max(50, Math.round(canvas.width * canvas.height / 8000)); i++) {
+        particles.push(new Particle());
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => { p.update(); p.draw(); });
+
+        // Conexiones entre partículas (proxy al mouse también)
+        const mouseMoved = Math.hypot(mouse.x - mouse.prevX, mouse.y - mouse.prevY) > 1;
+
+        for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+                const dx = particles[i].x - particles[j].x;
+                const dy = particles[i].y - particles[j].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 200) {
+                    ctx.beginPath();
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    const alpha = 0.2 * (1 - dist / 200);
+                    ctx.strokeStyle = `hsla(${(particles[i].hue + particles[j].hue) / 2}, 80%, 60%, ${alpha})`;
+                    ctx.lineWidth = 1.2;
+                    ctx.stroke();
+                }
+            }
+
+            // Conectar partículas cercanas al mouse con línea brillante
+            if (mouse.x > 0 && mouse.y > 0) {
+                const dx = particles[i].x - mouse.x;
+                const dy = particles[i].y - mouse.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 250) {
+                    ctx.beginPath();
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(mouse.x, mouse.y);
+                    const alpha = 0.12 * (1 - dist / 250);
+                    ctx.strokeStyle = `hsla(${particles[i].hue}, 90%, 70%, ${alpha})`;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+            }
+        }
+        requestAnimationFrame(animate);
+    }
+    animate();
+})();
+
+// ============================================================
+// JARVIS WEB APP
+// ============================================================
+const chat = document.getElementById('chat');
+const input = document.getElementById('input');
+const btnSend = document.getElementById('btn-send');
+const btnMic = document.getElementById('btn-mic');
+const btnVoice = document.getElementById('btn-voice');
+const typing = document.getElementById('typing');
+const statusDot = document.getElementById('status-dot');
+const statusText = document.getElementById('status-text');
+const modCount = document.getElementById('mod-count');
+const ttsStatus = document.getElementById('tts-status');
+const suggestions = document.getElementById('suggestions');
+
+let voiceActive = true;
+let listening = false;
+let micKeepAlive = false;
+let ultimaRespuesta = '';
+let ttsSpeaking = false;
+let sesionActiva = '';
+
+let typingTimeout = null;
+
+function typewriterEffect(element, fullText, speed = 30, onDone) {
+    if (typingTimeout) {
+        clearTimeout(typingTimeout);
+        typingTimeout = null;
+    }
+    let i = 0;
+    element.textContent = '';
+    const chatContainer = document.getElementById('chat');
+    function escribir() {
+        if (i < fullText.length) {
+            element.textContent += fullText.charAt(i);
+            i++;
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            typingTimeout = setTimeout(escribir, speed);
+        } else if (onDone) {
+            onDone();
+        }
+    }
+    escribir();
+}
+
+// --- Sesiones ---
+const sessionBtn = document.getElementById('session-btn');
+const sessionPanel = document.getElementById('session-panel');
+const sessionList = document.getElementById('session-list');
+const sessionName = document.getElementById('session-name');
+const sessionNew = document.getElementById('session-new');
+
+document.addEventListener('click', e => {
+    if (!sessionBtn.contains(e.target) && !sessionPanel.contains(e.target)) {
+        sessionPanel.classList.remove('show');
+    }
+});
+sessionBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    sessionPanel.classList.toggle('show');
+    if (sessionPanel.classList.contains('show')) cargarSesiones();
+});
+sessionNew.addEventListener('click', e => {
+    e.stopPropagation();
+    fetch('/api/sessions', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                sesionActiva = data.session.id;
+                actualizarNombreSesion(data.session.name);
+                limpiarChat();
+                cargarSesiones();
+                sessionPanel.classList.remove('show');
+            }
+        });
+});
+
+function cargarSesiones() {
+    fetch('/api/sessions')
+        .then(r => r.json())
+        .then(data => {
+            sessionList.innerHTML = '';
+            sesionActiva = data.activa;
+            data.sessions.forEach(s => {
+                const item = document.createElement('div');
+                item.className = 'session-item' + (s.active ? ' active' : '');
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'session-item-name';
+                nameSpan.textContent = s.name;
+                nameSpan.title = 'Click para cambiar / Doble click para renombrar';
+                const countSpan = document.createElement('span');
+                countSpan.className = 'session-item-count';
+                countSpan.textContent = s.count + ' msgs';
+                const delBtn = document.createElement('button');
+                delBtn.className = 'session-item-del';
+                delBtn.textContent = '×';
+                delBtn.title = 'Eliminar sesión';
+                item.appendChild(nameSpan);
+                item.appendChild(countSpan);
+                item.appendChild(delBtn);
+                // Switch
+                item.addEventListener('click', e => {
+                    if (e.target === delBtn) return;
+                    if (s.active) return;
+                    cambiarSesion(s.id);
+                });
+                // Rename on double click
+                nameSpan.addEventListener('dblclick', e => {
+                    e.stopPropagation();
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'session-rename-input';
+                    input.value = s.name;
+                    nameSpan.replaceWith(input);
+                    input.focus();
+                    input.select();
+                    input.addEventListener('blur', () => renombrarSesion(s.id, input.value, input));
+                    input.addEventListener('keydown', ev => {
+                        if (ev.key === 'Enter') { input.blur(); }
+                        if (ev.key === 'Escape') { input.replaceWith(nameSpan); }
+                    });
+                });
+                // Delete
+                delBtn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    if (confirm(`¿Eliminar "${s.name}"?`)) {
+                        fetch('/api/sessions/' + s.id, { method: 'DELETE' })
+                            .then(r => r.json())
+                            .then(() => {
+                                cargarSesiones();
+                                fetch('/api/sessions')
+                                    .then(r2 => r2.json())
+                                    .then(d2 => {
+                                        const act = d2.sessions.find(x => x.active);
+                                        if (act) {
+                                            sesionActiva = act.id;
+                                            actualizarNombreSesion(act.name);
+                                            limpiarChat();
+                                        }
+                                    });
+                            });
+                    }
+                });
+                sessionList.appendChild(item);
+            });
+            const act = data.sessions.find(s => s.active);
+            if (act) actualizarNombreSesion(act.name);
+        });
+}
+
+function cambiarSesion(sid) {
+    fetch('/api/sessions/switch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sid }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            sesionActiva = sid;
+            // Reconstruir el chat sin flash visual
+            const msgs = chat.querySelectorAll('.msg');
+            const rebuild = document.createDocumentFragment();
+            (data.history || []).forEach(h => {
+                if (h.cmd) rebuild.appendChild(crearMensaje(h.cmd, 'user'));
+                if (h.resp) rebuild.appendChild(crearMensaje(h.resp, 'jarvis'));
+            });
+            // Reemplazar todos los mensajes de una vez
+            msgs.forEach(el => el.remove());
+            chat.appendChild(rebuild);
+            cargarSesiones();
+            sessionPanel.classList.remove('show');
+            scrollDown();
+        }
+    });
+}
+
+function renombrarSesion(sid, name, input) {
+    const newName = name.trim() || 'Sin nombre';
+    fetch('/api/sessions/rename', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sid, name: newName }),
+    })
+    .then(r => r.json())
+    .then(() => {
+        cargarSesiones();
+        const act = document.querySelector('.session-item.active .session-item-name');
+        if (act) actualizarNombreSesion(act.textContent);
+    })
+    .catch(() => {
+        if (input) input.replaceWith(document.createElement('span'));
+    });
+}
+
+function actualizarNombreSesion(name) {
+    sessionName.textContent = name || 'Principal';
+}
+
+function limpiarChat() {
+    chat.querySelectorAll('.msg').forEach(el => el.remove());
+}
+
+// --- Motores de búsqueda seleccionables ---
+const MOTORES_POR_DEFECTO = ['duckduckgo', 'wikipedia'];
+let motoresActivos = [];
+
+function cargarMotores() {
+    try {
+        const guardado = localStorage.getItem('jarvis_motores');
+        if (guardado) motoresActivos = JSON.parse(guardado);
+    } catch {}
+    if (!motoresActivos.length) motoresActivos = [...MOTORES_POR_DEFECTO];
+}
+
+function guardarMotores() {
+    localStorage.setItem('jarvis_motores', JSON.stringify(motoresActivos));
+}
+
+function toggleMotor(engine) {
+    const idx = motoresActivos.indexOf(engine);
+    if (idx >= 0) {
+        motoresActivos.splice(idx, 1);
+    } else {
+        motoresActivos.push(engine);
+    }
+    guardarMotores();
+    actualizarChipsMotores();
+}
+
+function actualizarChipsMotores() {
+    document.querySelectorAll('.engine-chip').forEach(el => {
+        const eng = el.dataset.engine;
+        el.classList.toggle('on', motoresActivos.includes(eng));
+    });
+}
+
+function inicializarMotores() {
+    cargarMotores();
+    document.querySelectorAll('.engine-chip').forEach(el => {
+        el.addEventListener('click', () => toggleMotor(el.dataset.engine));
+    });
+    actualizarChipsMotores();
+}
+
+// ============================================================
+// ENGINE INDICATOR — resalta motor usado en respuesta
+// ============================================================
+function actualizarMotores(respuesta) {
+    document.querySelectorAll('.engine-chip').forEach(el => el.classList.remove('used'));
+    if (/\u1D52\u02B3/.test(respuesta)) document.getElementById('engine-or')?.classList.add('used');
+    if (/\u02B7/.test(respuesta)) document.getElementById('engine-wiki')?.classList.add('used');
+    if (/\u1D48\u1D48\u1D4D/.test(respuesta)) document.getElementById('engine-ddg')?.classList.add('used');
+    setTimeout(() => {
+        document.querySelectorAll('.engine-chip').forEach(el => el.classList.remove('used'));
+    }, 4000);
+}
+
+// ============================================================
+// SPLASH — Explosion effect on hide
+// ============================================================
+    function mostrarApp() {
+        const splash = document.getElementById('splash');
+        // Particle burst
+        for (let i = 0; i < 30; i++) {
+            const p = document.createElement('div');
+            p.style.cssText = `
+                position:fixed; width:${2+Math.random()*4}px; height:${2+Math.random()*4}px;
+                border-radius:50%; pointer-events:none; z-index:101;
+                background:${['#00d4ff','#a855f7','#ec4899','#fff'][Math.floor(Math.random()*4)]};
+                top:50%; left:50%;
+                box-shadow: 0 0 6px currentColor;
+            `;
+            const angle = Math.random() * 360;
+            const dist = 100 + Math.random() * 300;
+            const dur = 400 + Math.random() * 400;
+            document.body.appendChild(p);
+            p.animate([
+                { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 },
+                { transform: `translate(calc(-50% + ${Math.cos(angle)*dist}px), calc(-50% + ${Math.sin(angle)*dist}px)) scale(0)`, opacity: 0 }
+            ], { duration: dur, easing: 'ease-out' }).onfinish = () => p.remove();
+        }
+        splash.classList.add('hidden');
+        document.querySelector('.app').classList.add('visible');
+    }
+
+    // Auto-ocultar splash tras 5s aunque el servidor no responda
+    setTimeout(mostrarApp, 5000);
+
+    fetch('/api/status')
+        .then(r => r.json())
+        .then(data => {
+            mostrarApp();
+            modCount.textContent = data.modulos || 0;
+            ttsStatus.textContent = `TTS: ${data.tts ? '🔊' : '🔇'}`;
+            document.getElementById('stt-status').textContent = `STT: ${data.stt ? '🎤' : '🎤'}`;
+            if (data.motores) {
+                document.querySelectorAll('.engine-chip').forEach(el => {
+                    const eng = el.dataset.engine;
+                    if (!data.motores.includes(eng)) {
+                        el.style.display = 'none';
+                    }
+                });
+            }
+            if (data.tts_voice !== undefined) {
+                cargarVoces(data.tts_voice);
+            }
+            setStatus('online');
+            saludar(data);
+        })
+        .catch(() => {
+            mostrarApp();
+            setStatus('error');
+            addMessage('Error de conexión con el servidor', 'jarvis');
+        });
+
+function setStatus(state) {
+    if (state === 'online') {
+        statusDot.className = 'status-dot';
+        statusText.textContent = 'EN LÍNEA';
+    } else if (state === 'listening') {
+        statusDot.className = 'status-dot';
+        statusDot.style.background = 'var(--rojo)';
+        statusText.textContent = 'ESCUCHANDO';
+    } else if (state === 'thinking') {
+        statusDot.className = 'status-dot';
+        statusDot.style.background = 'var(--naranja)';
+        statusText.textContent = 'PROCESANDO';
+    } else {
+        statusDot.className = 'status-dot off';
+        statusText.textContent = 'ERROR';
+    }
+}
+
+// ============================================================
+// VOZ
+// ============================================================
+function cargarVoces(actual) {
+    fetch('/api/voices')
+        .then(r => r.json())
+        .then(data => {
+            const select = document.getElementById('voice-select');
+            select.innerHTML = '';
+            data.voces.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.id;
+                opt.textContent = v.nombre;
+                select.appendChild(opt);
+            });
+            if (actual && [...select.options].some(o => o.value === actual)) {
+                select.value = actual;
+            }
+        })
+        .catch(() => {});
+}
+
+function cambiarVoz() {
+    const select = document.getElementById('voice-select');
+    const vozId = select.value;
+    fetch('/api/voice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voice: vozId }),
+    }).catch(() => {});
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const sel = document.getElementById('voice-select');
+    if (sel) sel.addEventListener('change', cambiarVoz);
+});
+
+// ============================================================
+// INIT MOTORES
+// ============================================================
+inicializarMotores();
+
+// ============================================================
+// SESIONES — cargar y restaurar al inicio
+// ============================================================
+fetch('/api/sessions')
+    .then(r => r.json())
+    .then(data => {
+        const act = data.sessions.find(s => s.active);
+        if (act) {
+            sesionActiva = act.id;
+            actualizarNombreSesion(act.name);
+        }
+        // Cargar historial de la sesion activa
+        return fetch('/api/sessions/switch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sesionActiva || data.activa }),
+        });
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok && data.history) {
+            data.history.forEach(h => {
+                if (h.cmd) addMessage(h.cmd, 'user', true);
+                if (h.resp) addMessage(h.resp, 'jarvis', true);
+            });
+            scrollDown();
+        }
+    })
+    .catch(() => {});
+
+// Hide splash after restore
+setTimeout(() => {
+    const splash = document.getElementById('splash');
+    if (splash) splash.style.display = 'none';
+}, 800);
+
+// ============================================================
+// MESSAGES
+// ============================================================
+function renderLine(parent, line) {
+    // Check if this line has a link pattern: [link] https://...
+    const linkMatch = line.match(/^(\s*\[link\]\s*)(https?:\/\/[^\s]+)/);
+    if (linkMatch) {
+        const a = document.createElement('a');
+        a.href = linkMatch[2];
+        a.target = '_blank';
+        a.className = 'msg-link';
+        a.textContent = linkMatch[0].trim();
+        parent.appendChild(a);
+        return;
+    }
+    // Check for bare URL anywhere in the line
+    const bareUrlMatch = line.match(/(https?:\/\/[^\s]+)/);
+    if (bareUrlMatch) {
+        const parts = line.split(/(https?:\/\/[^\s]+)/);
+        for (const part of parts) {
+            if (/^https?:\/\//.test(part)) {
+                const a = document.createElement('a');
+                a.href = part;
+                a.target = '_blank';
+                a.className = 'msg-link';
+                a.textContent = part;
+                parent.appendChild(a);
+            } else {
+                parent.appendChild(document.createTextNode(part));
+            }
+        }
+        return;
+    }
+    // Check if it's a title-line (starts with non-ASCII like ▸)
+    if (/^[\w\s]{0,3}[^\x00-\x7F]/.test(line.trim())) {
+        const span = document.createElement('span');
+        span.className = 'title-line';
+        span.textContent = line;
+        parent.appendChild(span);
+    } else {
+        parent.appendChild(document.createTextNode(line));
+    }
+}
+
+function crearMensaje(texto, tipo = 'jarvis') {
+    const div = document.createElement('div');
+    div.className = `msg ${tipo}`;
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    if (/<[a-z][\s\S]*>/i.test(texto)) {
+        bubble.innerHTML = texto;
+    } else if (tipo === 'jarvis') {
+        const lines = texto.split('\n');
+        lines.forEach((line, i) => {
+            if (i > 0) bubble.appendChild(document.createElement('br'));
+            renderLine(bubble, line);
+        });
+    } else {
+        bubble.textContent = texto;
+    }
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'msg-copy';
+    copyBtn.textContent = '📋';
+    copyBtn.title = 'Copiar mensaje';
+    copyBtn.onclick = function(e) {
+        e.stopPropagation();
+        const textContent = bubble.textContent || bubble.innerText || '';
+        navigator.clipboard.writeText(textContent).catch(() => {});
+        copyBtn.textContent = '✅';
+        setTimeout(() => { copyBtn.textContent = '📋'; }, 1500);
+    };
+    div.appendChild(copyBtn);
+    div.appendChild(bubble);
+    return div;
+}
+
+function copyText(texto) {
+    navigator.clipboard.writeText(texto).catch(() => {});
+}
+
+function addMessage(texto, tipo = 'jarvis', skipTimestamp = false) {
+    const div = document.createElement('div');
+    div.className = `msg ${tipo}`;
+
+    if (!skipTimestamp) {
+        const time = document.createElement('div');
+        time.className = 'msg-time';
+        const now = new Date();
+        time.textContent = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        div.appendChild(time);
+    }
+
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+
+    // If message contains HTML, render as HTML
+    if (/<[a-z][\s\S]*>/i.test(texto)) {
+        bubble.innerHTML = texto;
+    } else if (tipo === 'jarvis') {
+        const speed = texto.length > 300 ? 20 : texto.length > 100 ? 25 : 30;
+        bubble.innerHTML = '';
+        setTimeout(() => {
+            typewriterEffect(bubble, texto, speed, function() {
+                // After typewriter, render formatted HTML
+                bubble.innerHTML = '';
+                const lines = texto.split('\n');
+                lines.forEach((line, i) => {
+                    if (i > 0) bubble.appendChild(document.createElement('br'));
+                    renderLine(bubble, line);
+                });
+                scrollDown();
+            });
+            scrollDown();
+        }, 10);
+    } else {
+        bubble.textContent = texto;
+    }
+
+    // Copy button
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'msg-copy';
+    copyBtn.textContent = '📋';
+    copyBtn.title = 'Copiar mensaje';
+    copyBtn.onclick = function(e) {
+        e.stopPropagation();
+        const textContent = bubble.textContent || bubble.innerText || '';
+        copyText(textContent);
+        copyBtn.textContent = '✅';
+        setTimeout(() => { copyBtn.textContent = '📋'; }, 1500);
+    };
+    div.appendChild(copyBtn);
+
+    div.appendChild(bubble);
+    chat.insertBefore(div, typing);
+    scrollDown();
+}
+
+function scrollDown() {
+    setTimeout(() => { chat.scrollTop = chat.scrollHeight; }, 50);
+}
+
+function showTyping(show) {
+    typing.classList.toggle('active', show);
+    if (show) scrollDown();
+}
+
+// ============================================================
+// SEND COMMAND
+// ============================================================
+function esperarTTS(callback) {
+    if (!voiceActive) { callback(); return; }
+    ttsSpeaking = true;
+    let polls = 0;
+    const MAX_POLLS = 200; // max 60s (200 * 300ms)
+    const poll = setInterval(() => {
+        polls++;
+        if (polls > MAX_POLLS) {
+            clearInterval(poll);
+            ttsSpeaking = false;
+            callback();
+            return;
+        }
+        fetch('/api/speak-status')
+            .then(r => r.json())
+            .then(d => {
+                if (!d.speaking) {
+                    clearInterval(poll);
+                    ttsSpeaking = false;
+                    callback();
+                }
+            })
+            .catch(() => { clearInterval(poll); ttsSpeaking = false; callback(); });
+    }, 300);
+}
+
+function hablarRespuesta(data) {
+    if (!data.respuesta) return;
+    function cortarEnOraciones(txt, max) {
+        if (txt.length <= max) return txt;
+        for (const d of ['. ', '? ', '! ', '.\n', '?\n', '!\n']) {
+            const idx = txt.lastIndexOf(d, max);
+            if (idx > max / 2) return txt.slice(0, idx + 1).trim();
+        }
+        const idx = txt.lastIndexOf(' ', max);
+        if (idx > max / 2) return txt.slice(0, idx).trim();
+        const sp = txt.slice(0, max).lastIndexOf(' ');
+        return sp > 0 ? txt.slice(0, sp).trim() : txt.slice(0, max);
+    }
+    const textoSinIconos = cortarEnOraciones(
+        data.respuesta
+            .replace(/[^\x20-\xff]/g, '')
+            .split('\n')
+            .filter(l => !l.match(/^[\s\-_=]{3,}/))
+            .join('. '),
+        300
+    );
+    if (textoSinIconos.trim()) {
+        ttsSpeaking = true;
+        fetch('/api/speak', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: textoSinIconos }),
+        })
+        .then(() => {
+            esperarTTS(() => {});
+        });
+    }
+}
+
+function enviarComando() {
+    if (typingTimeout) { clearTimeout(typingTimeout); typingTimeout = null; }
+    const comando = input.value.trim();
+    if (!comando) return;
+
+    input.value = '';
+    addMessage(comando, 'user');
+    showTyping(true);
+    setStatus('thinking');
+
+    fetch('/api/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: comando, motores: motoresActivos }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        showTyping(false);
+        if (data.error) {
+            addMessage(`⚠️ ${data.error}`, 'jarvis');
+            setStatus('online');
+            return;
+        }
+        if (data.exit) {
+            addMessage('Apagando sistema...', 'jarvis');
+            setTimeout(() => document.body.innerHTML = '<div style="text-align:center;margin-top:40vh;color:#00d4ff;font-family:monospace">SISTEMA APAGADO</div>', 1000);
+            return;
+        }
+
+        // Voice-only: el servidor ya habló, no mostrar nada
+        if (data.voice_only) {
+            setStatus('online');
+            return;
+        }
+
+        setStatus('online');
+
+        // Mostrar mensajes uno a uno si hay fragmentos, o solo la respuesta completa
+        if (data.mensajes && data.mensajes.length > 1) {
+            // Mostrar cada fragmento con pausa
+            data.mensajes.forEach((frag, i) => {
+                setTimeout(() => {
+                    addMessage(frag, 'jarvis', i > 0);
+                    scrollDown();
+                }, i * 900);
+            });
+            // La respuesta completa se habla al final
+            setTimeout(() => {
+                if (voiceActive && data.respuesta) {
+                    hablarRespuesta(data);
+                }
+            }, data.mensajes.length * 900 + 200);
+        } else {
+            addMessage(data.respuesta, 'jarvis');
+            // Guardar para "continua"
+            ultimaRespuesta = data.respuesta;
+            // Actualizar barra de motores según la respuesta
+            actualizarMotores(data.respuesta);
+            if (voiceActive && data.respuesta) {
+                hablarRespuesta(data);
+            }
+        }
+
+        // Actualizar nombre de sesion si cambio (auto-rename)
+        if (data.session_name && data.session_name !== sessionName.textContent) {
+            actualizarNombreSesion(data.session_name);
+        }
+
+        // Guardar para "continua"
+        ultimaRespuesta = data.respuesta;
+
+        // Actualizar barra de motores según la respuesta
+        actualizarMotores(data.respuesta);
+
+        // Sin TTS: wake word se reanuda sola
+    })
+    .catch(err => {
+        showTyping(false);
+        addMessage(`⚠️ Error de conexión: ${err.message}`, 'jarvis');
+        setStatus('online');
+    });
+}
+// ============================================================
+// COMMAND PALETTE
+// ============================================================
+const COMANDOS = [
+    { cmd: '/bolsa ',                icon: '$', desc: 'Cotizacion de acciones (3 fuentes)' },
+    { cmd: '/precio de ',            icon: '$', desc: 'Precio de accion o cripto' },
+    { cmd: '/que es ',               icon: '?', desc: 'Definicion o concepto' },
+    { cmd: '/quien es ',             icon: '@', desc: 'Biografia de persona' },
+    { cmd: '/clima en ',             icon: '~', desc: 'Clima de una ciudad' },
+    { cmd: '/noticias de ',          icon: 'n', desc: 'Noticias sobre un tema' },
+    { cmd: '/traduce al ingles ',    icon: '>', desc: 'Traducir texto' },
+    { cmd: '/cuanto es ',            icon: '#', desc: 'Resolver operacion matematica' },
+    { cmd: '/recuerda que ',         icon: 'm', desc: 'Guardar un hecho en memoria' },
+    { cmd: '/olvida que ',           icon: '-', desc: 'Borrar un hecho' },
+    { cmd: '/aprende que ',          icon: '+', desc: 'Ensenar algo nuevo' },
+    { cmd: '/abre ',                 icon: '>', desc: 'Abrir app o web' },
+    { cmd: '/crea recordatorio ',    icon: 't', desc: 'Crear recordatorio' },
+    { cmd: '/busca archivos ',       icon: 'f', desc: 'Buscar archivos en PC' },
+    { cmd: '/virustotal ',           icon: '!', desc: 'Analizar archivo en VirusTotal' },
+    { cmd: '/crea nota ',            icon: 'n', desc: 'Crear nota de texto' },
+    { cmd: '/salir',                 icon: 'x', desc: 'Apagar Jarvis' },
+    { cmd: '/apagar pc',             icon: '!', desc: 'Apagar el equipo' },
+    { cmd: '/reiniciar pc',          icon: '~', desc: 'Reiniciar el equipo' },
+];
+
+let cmdPaletteOpen = false;
+let cmdPaletteIdx = -1;
+let cmdPaletteItems = [];
+
+function abrirCmdPalette() {
+    const palette = document.getElementById('cmd-palette');
+    const list = document.getElementById('cmd-palette-list');
+    cmdPaletteOpen = true;
+    cmdPaletteIdx = -1;
+    cmdPaletteItems = COMANDOS;
+    renderCmdPalette();
+    palette.classList.add('open');
+}
+
+function cerrarCmdPalette() {
+    document.getElementById('cmd-palette').classList.remove('open');
+    cmdPaletteOpen = false;
+}
+
+function renderCmdPalette() {
+    const list = document.getElementById('cmd-palette-list');
+    const filtro = input.value.replace(/^\//, '').toLowerCase();
+    const items = filtro
+        ? COMANDOS.filter(c => c.cmd.toLowerCase().includes(filtro) || c.desc.toLowerCase().includes(filtro))
+        : COMANDOS;
+    cmdPaletteItems = items;
+    if (cmdPaletteIdx >= items.length) cmdPaletteIdx = items.length - 1;
+    list.innerHTML = items.map((c, i) =>
+        `<div class="cmd-palette-item${i === cmdPaletteIdx ? ' selected' : ''}" data-idx="${i}">
+            <span class="cmd-icon">${c.icon}</span>
+            <span>${c.cmd}</span>
+            <span class="cmd-desc">${c.desc}</span>
+        </div>`
+    ).join('');
+    if (cmdPaletteIdx >= 0) {
+        const sel = list.querySelector('.selected');
+        if (sel) sel.scrollIntoView({ block: 'nearest' });
+    }
+}
+
+function seleccionarCmdPalette() {
+    if (cmdPaletteIdx >= 0 && cmdPaletteIdx < cmdPaletteItems.length) {
+        input.value = cmdPaletteItems[cmdPaletteIdx].cmd;
+        cerrarCmdPalette();
+        input.focus();
+        // Move cursor to end
+        const len = input.value.length;
+        input.setSelectionRange(len, len);
+    }
+}
+
+// Click handler for cmd palette items (delegated)
+document.getElementById('cmd-palette-list').addEventListener('click', e => {
+    const item = e.target.closest('.cmd-palette-item');
+    if (!item) return;
+    const idx = parseInt(item.dataset.idx);
+    cmdPaletteIdx = idx;
+    seleccionarCmdPalette();
+});
+
+// ============================================================
+// EVENTS
+// ============================================================
+btnSend.addEventListener('click', enviarComando);
+
+// File upload button
+const btnFile = document.getElementById('btn-file');
+const fileInput = document.getElementById('file-input');
+btnFile.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    fileInput.value = '';
+    addMessage(`Subiendo ${file.name} a VirusTotal...`, 'user');
+    const fd = new FormData();
+    fd.append('file', file);
+    fetch('/api/virustotal', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) { addMessage('⚠️ ' + data.error, 'system'); return; }
+            addMessage(data.result || data.text || '✅ Analisis completado', 'jarvis');
+        })
+        .catch(err => addMessage('⚠️ Error: ' + err.message, 'system'));
+});
+input.addEventListener('keydown', e => {
+    if (cmdPaletteOpen) {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            cmdPaletteIdx = Math.min(cmdPaletteIdx + 1, cmdPaletteItems.length - 1);
+            renderCmdPalette();
+            return;
+        }
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            cmdPaletteIdx = Math.max(cmdPaletteIdx - 1, 0);
+            renderCmdPalette();
+            return;
+        }
+        if (e.key === 'Enter' || e.key === 'Tab') {
+            e.preventDefault();
+            seleccionarCmdPalette();
+            return;
+        }
+        if (e.key === 'Escape') {
+            cerrarCmdPalette();
+            return;
+        }
+    }
+
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        enviarComando();
+    }
+});
+
+// Open command palette on "/" in empty input, or start filtering
+input.addEventListener('input', () => {
+    if (input.value === '/') {
+        abrirCmdPalette();
+    } else if (cmdPaletteOpen && input.value.startsWith('/')) {
+        renderCmdPalette();
+    } else if (cmdPaletteOpen && !input.value.startsWith('/')) {
+        cerrarCmdPalette();
+    }
+});
+
+// Close on blur with delay (for click selection)
+input.addEventListener('blur', () => {
+    setTimeout(cerrarCmdPalette, 200);
+});
+
+document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
+        e.preventDefault();
+        if (listening) stopMic(true); else escucharVozUnaVez();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+        e.preventDefault();
+        chat.querySelectorAll('.msg').forEach(el => el.remove());
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'q') {
+        e.preventDefault();
+        enviarComando('salir');
+    }
+});
+
+// ============================================================
+// VOICE TOGGLE
+// ============================================================
+btnVoice.addEventListener('click', () => {
+    // Silenciar a Jarvis inmediatamente (hable o no)
+    ttsSpeaking = false;
+    fetch('/api/stop-speak', { method: 'POST' });
+    voiceActive = !voiceActive;
+    btnVoice.classList.toggle('off', !voiceActive);
+    btnVoice.textContent = voiceActive ? '🔊' : '🔇';
+});
+
+// ============================================================
+// MIC - REAL-TIME STT (Web Speech API)
+// ============================================================
+// ============================================================
+// MIC - WAKE WORD + BROWSER SPEECH RECOGNITION
+// ============================================================
+btnMic.addEventListener('click', () => {
+    if (listening) { stopMic(true); }
+    else { escucharVozUnaVez(); }
+});
+
+// Elemento flotante para transcripción en tiempo real
+const transcriptionEl = document.createElement('div');
+transcriptionEl.id = 'transcription';
+transcriptionEl.style.cssText = 'display:none;position:absolute;bottom:100%;left:0;right:0;padding:8px 16px;background:rgba(0,20,40,0.95);border:1px solid rgba(0,212,255,0.2);border-radius:8px;font-size:13px;color:var(--acento);z-index:10;backdrop-filter:blur(8px);margin-bottom:8px;pointer-events:none;';
+document.querySelector('.input-area').style.position = 'relative';
+document.querySelector('.input-area').appendChild(transcriptionEl);
+
+// --- Wake Word: dos palmadas ---
+let clapStream = null;
+let clapContext = null;
+let clapAnalyser = null;
+let clapActive = false;
+let clapTimer = null;
+let clapBuffer = [];        // timestamps de palmadas detectadas
+const CLAP_WINDOW_MS = 1500; // ventana para contar 2 palmadas
+const CLAP_THRESHOLD = 0.35; // umbral de volumen normalizado
+
+async function iniciarWakeWord() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        clapStream = stream;
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        clapContext = ctx;
+        const src = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 512;
+        clapAnalyser = analyser;
+        src.connect(analyser);
+        clapActive = true;
+        btnMic.classList.add('wakeword-idle');
+        _monitorearClaps();
+    } catch (e) {
+        console.log('Microfono no disponible para palmadas');
+        btnMic.title = '🎤 Clic para hablar (microfono no disponible)';
+    }
+}
+
+function _monitorearClaps() {
+    if (!clapActive || !clapAnalyser) return;
+    const bufferLength = clapAnalyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    function _loop() {
+        if (!clapActive) return;
+        clapAnalyser.getByteTimeDomainData(dataArray);
+
+        // RMS del frame
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+            const val = (dataArray[i] - 128) / 128;
+            sum += val * val;
+        }
+        const rms = Math.sqrt(sum / bufferLength);
+
+        // Deteccion de palmada: pico agudo y corto
+        if (rms > CLAP_THRESHOLD) {
+            const now = Date.now();
+            // Ignorar si ya detectamos una en los ultimos 200ms
+            if (clapBuffer.length === 0 || now - clapBuffer[clapBuffer.length - 1] > 200) {
+                clapBuffer.push(now);
+                // Quitar palmadas fuera de la ventana
+                clapBuffer = clapBuffer.filter(t => now - t <= CLAP_WINDOW_MS);
+
+                if (clapBuffer.length >= 2) {
+                    clapBuffer = [];
+                    _dispararWakeWord();
+                }
+            }
+        }
+        requestAnimationFrame(_loop);
+    }
+    _loop();
+}
+
+function _dispararWakeWord() {
+    if (listening) return;
+    clapActive = false;
+    btnMic.classList.remove('wakeword-idle');
+    btnMic.classList.add('wakeword-active');
+    btnMic.textContent = '🎤';
+
+    ttsSpeaking = false;
+    fetch('/api/stop-speak', { method: 'POST' });
+
+    transcriptionEl.textContent = '⚠️ Dos palmadas!';
+    transcriptionEl.style.display = 'block';
+
+    setTimeout(() => {
+        transcriptionEl.style.display = 'none';
+        btnMic.classList.remove('wakeword-active');
+        btnMic.textContent = '🎤';
+        escucharVozUnaVez();
+    }, 500);
+}
+
+function reanudarWakeWord() {
+    if (listening || clapActive) return;
+    if (clapContext && clapContext.state === 'suspended') {
+        clapContext.resume();
+    }
+    clapActive = true;
+    btnMic.classList.add('wakeword-idle');
+}
+
+function programarWakeWord() {
+    if (clapTimer) clearTimeout(clapTimer);
+    clapTimer = setTimeout(reanudarWakeWord, 1200);
+}
+
+function detenerWakeWord() {
+    if (clapTimer) { clearTimeout(clapTimer); clapTimer = null; }
+    clapActive = false;
+    btnMic.classList.remove('wakeword-idle');
+    // No cerramos el stream para evitar reinicios lentos
+}
+
+// --- Escucha unica: boton 🎤 o despues de "Jarvis" ---
+function escucharVozUnaVez() {
+    detenerWakeWord();
+    listening = true;
+    btnMic.classList.add('listening');
+    btnMic.textContent = '🔴';
+    setStatus('listening');
+    transcriptionEl.style.display = 'block';
+    transcriptionEl.textContent = '🎤 Escuchando...';
+    fetch('/api/stop-speak', { method: 'POST' });
+
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) {
+        const rec = new SR();
+        rec.continuous = false;
+        rec.interimResults = true;
+        rec.lang = 'es-ES';
+        let finalText = '';
+
+        rec.onresult = (event) => {
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                if (event.results[i].isFinal) finalText += ' ' + event.results[i][0].transcript;
+            }
+            const show = finalText.trim() || event.results[event.resultIndex][0].transcript;
+            transcriptionEl.textContent = '🎤 ' + show;
+        };
+
+        rec.onend = () => {
+            const texto = finalText.trim();
+            if (texto) {
+                transcriptionEl.textContent = '✅ ' + texto;
+                input.value = texto;
+                setTimeout(() => {
+                    stopMic(false);
+                    transcriptionEl.style.display = 'none';
+                    enviarComando();
+                }, 400);
+            } else {
+                transcriptionEl.textContent = '❌ No te oi';
+                setTimeout(() => {
+                    stopMic(false);
+                    transcriptionEl.style.display = 'none';
+                }, 1800);
+            }
+        };
+
+        rec.onerror = () => {
+            transcriptionEl.textContent = '❌ Error';
+            setTimeout(() => {
+                stopMic(false);
+                transcriptionEl.style.display = 'none';
+            }, 2000);
+        };
+
+        try { rec.start(); } catch (e) {
+            transcriptionEl.textContent = '❌ Error de microfono';
+            setTimeout(() => {
+                stopMic(false);
+                transcriptionEl.style.display = 'none';
+            }, 2000);
+        }
+    } else {
+        // Fallback: servidor STT (PowerShell)
+        startServerMic();
+    }
+}
+
+function startServerMic() {
+    listening = true;
+    btnMic.classList.add('listening');
+    btnMic.textContent = '🔴';
+    setStatus('listening');
+    transcriptionEl.style.display = 'block';
+    transcriptionEl.textContent = '🎤 Habla...';
+    fetch('/api/stop-speak', { method: 'POST' });
+    fetch('/api/stt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ timeout: 10 }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        stopMic(false);
+        if (data.texto && !data.error) {
+            transcriptionEl.textContent = '✅ ' + data.texto;
+            input.value = data.texto;
+            setTimeout(() => { transcriptionEl.style.display = 'none'; enviarComando(); }, 400);
+        } else if (data.texto) {
+            transcriptionEl.textContent = '❌ ' + data.texto;
+            setTimeout(() => { transcriptionEl.style.display = 'none'; }, 3000);
+        } else {
+            transcriptionEl.textContent = '❌ No te oi';
+            setTimeout(() => { transcriptionEl.style.display = 'none'; }, 1500);
+        }
+    })
+    .catch(err => {
+        transcriptionEl.textContent = '❌ Error: ' + err.message;
+        setTimeout(() => { transcriptionEl.style.display = 'none'; }, 3000);
+        stopMic(false);
+    });
+}
+
+function stopMic(manual) {
+    if (manual) micKeepAlive = false;
+    listening = false;
+    btnMic.classList.remove('listening');
+    btnMic.textContent = '🎤';
+    setStatus('online');
+    transcriptionEl.style.display = 'none';
+    setTimeout(reanudarWakeWord, 800);
+}
+
+function addDiagnosticLink() {
+    const div = document.createElement('div');
+    div.className = 'msg jarvis';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.style.fontSize = '12px';
+    bubble.style.cursor = 'pointer';
+    bubble.style.color = 'var(--acento)';
+    bubble.innerHTML = '> <u>Diagnosticar microfono</u>';
+    bubble.onclick = () => {
+        fetch('/api/mic-diagnose')
+            .then(r => r.json())
+            .then(d => {
+                let msg = 'DISPOSITIVOS:\n';
+                (d.devices || []).forEach(dev => {
+                    const status = dev.level > 500 ? '✅ FUNCIONA' : dev.level === -1 ? `❌ ERROR: ${dev.error || ''}` : '❌ SILENCIO';
+                    msg += `\n  #${dev.id}: ${dev.name.substring(0, 40)}\n  → ${status}`;
+                });
+                const noWorking = (d.devices || []).every(d => d.level < 500);
+                if (noWorking) {
+                    msg += '\n\n⚠️ NINGUN MICROFONO CAPTA AUDIO.\n';
+                    msg += 'Windows+R → mmsys.cpl → Grabación → Habilitar micrófono';
+                }
+                addMessage(msg, 'jarvis');
+            })
+            .catch(() => addMessage('⚠️ Error diagnosticando', 'jarvis'));
+    };
+    div.appendChild(bubble);
+    chat.insertBefore(div, typing);
+    scrollDown();
+}
+
+// ============================================================
+// SALUDO INICIAL
+// ============================================================
+function saludar(data) {
+    const ahora = new Date();
+    const h = ahora.getHours();
+    const periodo = h < 12 ? 'dias' : h < 19 ? 'tardes' : 'noches';
+    const usuario = (data.pc && data.pc.usuario) ? data.pc.usuario : 'usuario';
+    const saludosCortos = [
+        `Buenos ${periodo}, ${usuario}.`,
+        `Hola, ${usuario}.`,
+        `Bienvenido, ${usuario}.`,
+        `Que tal, ${usuario}?`,
+        `Buenas.`,
+        `?` + `Que hay?`,
+    ];
+    const saludoTexto = saludosCortos[Math.floor(Math.random() * saludosCortos.length)];
+    const saludo = [
+        `◆ ${saludoTexto} ◆`,
+        `─────────────────────────────────────────`,
+        `Di "Jarvis" + comando (ej: "Jarvis clima Habana")  |  o presiona 🎤`,
+        `─────────────────────────────────────────`,
+    ].join('\n');
+    addMessage(saludo, 'jarvis');
+
+    if (data.tts) {
+        fetch('/api/speak', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: `Hola ${usuario}. Jarvis en linea.` }),
+        });
+    }
+    // Wake word: dos palmadas
+    iniciarWakeWord().catch(() => console.log('Palmadas no disponible'));
+
+    // Poner foco en el input para escribir inmediatamente
+    setTimeout(() => input.focus(), 500);
+
+    // Reportar visibilidad de la ventana para notificaciones automáticas
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            ttsSpeaking = false;
+            fetch('/api/stop-speak', { method: 'POST' });
+        }
+        fetch('/api/window-state', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ activa: !document.hidden })
+        });
+    });
+
+    // Detener TTS al cerrar la ventana/pestaña
+    window.addEventListener('beforeunload', () => {
+        ttsSpeaking = false;
+        fetch('/api/stop-speak', { method: 'POST' });
+    });
+    window.addEventListener('pagehide', () => {
+        ttsSpeaking = false;
+        fetch('/api/stop-speak', { method: 'POST' });
+    });
+
+    // Hacer que el botón de micrófono pulse para llamar la atención
+    btnMic.style.animation = 'mic-pulse 2s infinite';
+    setTimeout(() => { btnMic.style.animation = ''; }, 12000);
+}
+
+// ============================================================
+// DRAG & DROP — Metadatos de fotos
+// ============================================================
+const dropOverlay = document.getElementById('drop-overlay');
+let dragCounter = 0;
+
+document.addEventListener('dragenter', e => {
+    e.preventDefault();
+    dragCounter++;
+    if (dragCounter === 1) dropOverlay.classList.add('show');
+});
+document.addEventListener('dragleave', e => {
+    e.preventDefault();
+    dragCounter--;
+    if (dragCounter === 0) dropOverlay.classList.remove('show');
+});
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => {
+    e.preventDefault();
+    dragCounter = 0;
+    dropOverlay.classList.remove('show');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+        addMessage(`Enviando ${file.name} a VirusTotal...`, 'user');
+        const fd = new FormData();
+        fd.append('file', file);
+        fetch('/api/virustotal', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) { addMessage('⚠️ ' + data.error, 'system'); return; }
+                addMessage(data.result || data.text || '✅ Analisis completado', 'jarvis');
+            })
+            .catch(err => addMessage('⚠️ Error: ' + err.message, 'system'));
+        return;
+    }
+    const formData = new FormData();
+    formData.append('photo', file);
+    addMessage(`Analizando: ${file.name}`, 'user');
+    fetch('/api/photo-metadata', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) { addMessage('⚠️ ' + data.error, 'system'); return; }
+            let html = '<b>Metadatos completos</b>';
+            const md = data.metadata || data;
+            const fName = md._filename || data.fileName || '';
+            if (fName) html += `<br><span style="color:#aaa">${fName}</span>`;
+            if (md._size) html += ` <span style="color:#555;font-size:11px">(${(md._size/1024).toFixed(1)} KB)</span>`;
+            const categorias = ['exif', 'File', 'iptc', 'xmp', 'gps', 'composite', 'icc maker notes', 'ICC'];
+            let alguno = false;
+            for (const cat of categorias) {
+                const obj = md[cat];
+                if (obj && typeof obj === 'object' && Object.keys(obj).length) {
+                    alguno = true;
+                    html += `<br><br><b>▸ ${cat.toUpperCase()}</b><br>`;
+                    for (const [k, v] of Object.entries(obj)) {
+                        if (v !== null && v !== undefined && v !== '') {
+                            const val = typeof v === 'object' ? JSON.stringify(v) : v;
+                            html += `<span style="color:#888">${k}</span>: ${val}<br>`;
+                        }
+                    }
+                }
+            }
+            const omitidas = new Set(['exif', 'File', 'iptc', 'xmp', 'gps', 'composite', 'icc maker notes', 'ICC', '_filename', '_size', 'success', 'status', 'fileName', 'uuid', 'metadata']);
+            for (const [cat, vals] of Object.entries(md)) {
+                if (omitidas.has(cat)) continue;
+                if (vals && typeof vals === 'object' && Object.keys(vals).length) {
+                    alguno = true;
+                    html += `<br><br><b>▸ ${cat.toUpperCase()}</b><br>`;
+                    for (const [k, v] of Object.entries(vals)) {
+                        if (v !== null && v !== undefined && v !== '') {
+                            const val = typeof v === 'object' ? JSON.stringify(v) : v;
+                            html += `<span style="color:#888">${k}</span>: ${val}<br>`;
+                        }
+                    }
+                }
+            }
+            if (!alguno) html += '<br>⚠️ No se encontraron metadatos';
+            html += '<br><br><span style="color:#555;font-size:11px">Fuente: exiftools.com</span>';
+            addMessage(html, 'jarvis');
+        })
+            .catch(err => addMessage('⚠️ Error: ' + err.message, 'system'));
+});
+// ════════════════════════════════════════════════════════════════
+//  PANEL DE ESTRATEGIAS — Yoel Sardiñas / Scanner BB / Screener
+// ════════════════════════════════════════════════════════════════
+
+const EstrategiasPanel = {
+    activo: false,
+    symbol: '',
+    pasoActual: '',
+    estrategiaActual: '',
+    pollingInterval: null,
+    progressInterval: null,
+
+    abrir(estrategia, symbol) {
+        const panel = document.getElementById('panel-estrategias-contenido');
+        if (!panel) return;
+        this.activo = true;
+        this.estrategiaActual = estrategia;
+        this.symbol = symbol || '';
+        this._seleccionarBoton(estrategia);
+        this._mostrarInputSymbol(estrategia === 'sardinas');
+        if (this.progressInterval) clearInterval(this.progressInterval);
+        this.progressInterval = null;
+        // Mostrar panel derecho
+        const ec = document.getElementById('estrategias-content');
+        if (ec) ec.classList.add('visible');
+        // Ajustar título
+        const titulo = document.getElementById('estrategias-content-title');
+        const nombres = { sardinas:'Yoel Sardiñas', scanner_bb:'Scanner BB', screener:'Screener', ts_panel:'📊 Panel', ts_analizar:'🔬 Analizar', ts_escaner:'📡 Escáner' };
+        if (titulo) titulo.textContent = nombres[estrategia] || 'ESTRATEGIA';
+
+        if (estrategia === 'sardinas') {
+            this._abrirSardinas(symbol);
+        } else if (estrategia === 'scanner_bb' || estrategia === 'screener') {
+            this._abrirResultadosCache(estrategia);
+        } else if (estrategia.startsWith('ts_')) {
+            this._abrirTradingSystem(estrategia);
+        }
+    },
+
+    _mostrarInputSymbol(visible) {
+        const row = document.getElementById('est-input-row');
+        if (!row) return;
+        row.style.display = visible ? 'flex' : 'none';
+        if (visible) setTimeout(() => document.getElementById('est-input-symbol')?.focus(), 100);
+    },
+
+    _seleccionarBoton(estrategia) {
+        document.querySelectorAll('.est-boton').forEach(b => {
+            b.classList.toggle('activo', b.dataset.est === estrategia);
+        });
+    },
+
+    _abrirTradingSystem(tipo) {
+        const mapa = {
+            'ts_panel': {url: '/ts/', nombre: 'Panel QuantumTrade', emoji: '📊'},
+            'ts_analizar': {url: '/ts/analizar', nombre: 'Analizar Multi-TF', emoji: '🔬'},
+            'ts_escaner': {url: '/ts/escaner', nombre: 'Escáner de Mercado', emoji: '📡'},
+        };
+        const cfg = mapa[tipo] || mapa['ts_panel'];
+        const contenido = document.getElementById('panel-estrategias-contenido');
+        contenido.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <span style="color:#aaa;font-size:0.85em;">${cfg.emoji} ${cfg.nombre}</span>
+                <button onclick="EstrategiasPanel._recargarTS('${tipo}')" style="padding:3px 8px;background:#00d4ff22;border:1px solid #00d4ff44;border-radius:4px;color:#00d4ff;cursor:pointer;font-size:0.7em;">🔄 Recargar</button>
+            </div>
+            <div id="ts-loading-${tipo}" style="text-align:center;padding:30px 10px;color:#888;font-size:0.85em;">
+                <div class="loading" style="margin:0 auto 10px;"></div>
+                Conectando con QuantumTrade...
+            </div>
+            <iframe src="${cfg.url}" class="ts-iframe" id="ts-iframe-${tipo}" style="display:none;" onerror="this.style.display='none'"></iframe>
+            <p id="ts-fallback-${tipo}" style="display:none;color:#ff4444;text-align:center;font-size:0.8em;margin-top:8px;">
+                ⚠️ Trading System no disponible.
+                <br><button onclick="EstrategiasPanel._recargarTS('${tipo}')" style="margin-top:6px;padding:4px 12px;background:#00d4ff;border:none;border-radius:4px;color:#000;cursor:pointer;font-weight:bold;">Reintentar</button>
+            </p>
+        `;
+        const iframe = document.getElementById('ts-iframe-' + tipo);
+        const loading = document.getElementById('ts-loading-' + tipo);
+        const fallback = document.getElementById('ts-fallback-' + tipo);
+        let retries = 0;
+        function tryLoad() {
+            iframe.src = cfg.url;
+        }
+        iframe.onload = function() {
+            try {
+                if (iframe.contentDocument && iframe.contentDocument.body) {
+                    const html = iframe.contentDocument.body.innerHTML.trim();
+                    if (html.includes('Trading System no disponible') || html.includes('Error proxy') || html === '') {
+                        throw new Error('not ready');
+                    }
+                    loading.style.display = 'none';
+                    iframe.style.display = 'block';
+                    fallback.style.display = 'none';
+                    return;
+                }
+            } catch(e) {}
+            loading.style.display = 'block';
+            iframe.style.display = 'none';
+            fallback.style.display = 'none';
+            if (retries < 8) {
+                retries++;
+                setTimeout(tryLoad, 3000);
+            } else {
+                loading.style.display = 'none';
+                fallback.style.display = 'block';
+            }
+        };
+        iframe.onerror = function() {
+            loading.style.display = 'none';
+            fallback.style.display = 'block';
+        };
+        tryLoad();
+    },
+
+    _recargarTS(tipo) {
+        const iframe = document.getElementById('ts-iframe-' + tipo);
+        if (iframe) iframe.src = iframe.src;
+    },
+
+    _abrirSardinas(symbol) {
+        this.pasoActual = '';
+        const contenido = document.getElementById('panel-estrategias-contenido');
+        if (!symbol) {
+            contenido.innerHTML = '<p style="text-align:center;color:#aaa;margin:10px 0;font-size:0.9em;">Escribe un símbolo arriba y presiona <b>IR</b></p>';
+            return;
+        }
+        contenido.innerHTML = `
+            <p style="text-align:center;color:#aaa;margin:5px 0;" id="est-symbol">📊 ${symbol}</p>
+            <div id="checklist-container"></div>
+        `;
+        this.iniciarPolling();
+        if (this.progressInterval) { clearInterval(this.progressInterval); this.progressInterval = null; }
+        fetch('/api/sardi\u00f1as/iniciar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({symbol: symbol})
+        })
+        .then(r => r.json())
+        .then(data => {
+            this.pasoActual = data.paso_actual || '';
+            this._renderSardinas(data.checklist || {});
+        })
+        .catch(() => {});
+    },
+
+    _abrirResultadosCache(tipo) {
+        const contenido = document.getElementById('panel-estrategias-contenido');
+        const nombre = tipo === 'scanner_bb' ? 'Scanner Bollinger' : 'Screener Filtros';
+        const emoji = tipo === 'scanner_bb' ? '📉' : '🔍';
+        contenido.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="color:#aaa;font-size:0.85em;">${emoji} ${nombre}</span>
+                <button onclick="EstrategiasPanel._iniciarScanner('${tipo}')" style="padding:4px 10px;background:#00d4ff;border:none;border-radius:4px;color:#000;cursor:pointer;font-size:0.75em;font-weight:bold;">🔄 Actualizar</button>
+            </div>
+            <div class="progress-container" id="progress-box-${tipo}" style="display:none;">
+                <div class="progress-bar" id="progress-fill-${tipo}" style="width:0%"></div>
+            </div>
+            <p style="text-align:center;font-size:0.85em;color:#aaa;margin:4px 0;" id="progress-msg-${tipo}">Cargando datos...</p>
+            <div id="resultados-scanner-${tipo}"></div>
+            <div id="boton-chat-${tipo}" style="display:none;margin-top:8px;">
+                <button onclick="EstrategiasPanel._enviarAlChat('${tipo}')" style="width:100%;padding:8px;background:#00ff88;border:none;border-radius:5px;color:#000;cursor:pointer;font-weight:bold;font-size:0.85em;">
+                    ${tipo === 'scanner_bb' ? '📤 Enviar Top 3 al Chat' : '📤 Enviar Mejor Acci\u00f3n al Chat'}
+                </button>
+            </div>
+            <div id="veredicto-screener" style="margin-top:6px;"></div>
+            <div id="veredicto-contenido" style="margin-top:6px;display:none;"></div>
+        `;
+        this._cargarCache(tipo);
+    },
+
+    _cargarCache(tipo) {
+        const containerId = 'resultados-scanner-' + tipo;
+        const msgId = 'progress-msg-' + tipo;
+        const btnId = 'boton-chat-' + tipo;
+        const msgEl = document.getElementById(msgId);
+
+        fetch('/api/scanner/latest')
+            .then(r => r.json())
+            .then(data => {
+                const cache = tipo === 'scanner_bb' ? data.scanner : data.screener;
+                if (cache && cache.resultado) {
+                    msgEl.textContent = 'Datos cargados';
+                    this._renderResultados(tipo, cache.resultado, containerId, btnId);
+                } else {
+                    msgEl.textContent = 'Sin datos previos, iniciando scan...';
+                    this._iniciarScanner(tipo);
+                }
+            })
+            .catch(() => {
+                msgEl.textContent = 'Error al cargar, iniciando scan...';
+                this._iniciarScanner(tipo);
+            });
+    },
+
+    _iniciarScanner(tipo) {
+        const progressBox = document.getElementById('progress-box-' + tipo);
+        if (progressBox) progressBox.style.display = 'block';
+        const msgEl = document.getElementById('progress-msg-' + tipo);
+        if (msgEl) msgEl.textContent = 'Iniciando...';
+        if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
+        this._iniciarProgressPolling(tipo);
+        const endpoint = tipo === 'scanner_bb' ? '/api/scanner/bollinger' : '/api/screener/bollinger';
+        fetch(endpoint, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({})
+        }).catch(() => {});
+    },
+
+    _iniciarProgressPolling(tipo) {
+        if (this.progressInterval) clearInterval(this.progressInterval);
+        this.progressInterval = setInterval(() => {
+            if (!this.activo) { clearInterval(this.progressInterval); return; }
+            fetch('/api/scanner/progress')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data || data.tipo === '') return;
+                    if (data.tipo !== tipo && data.tipo !== 'scanner_bb' && data.tipo !== 'screener') return;
+                    const fillId = 'progress-fill-' + tipo;
+                    const msgId = 'progress-msg-' + tipo;
+                    const bar = document.getElementById(fillId);
+                    const msg = document.getElementById(msgId);
+                    if (data.total > 0 && bar) {
+                        const pct = Math.round((data.actual / data.total) * 100);
+                        bar.style.width = Math.min(pct, 100) + '%';
+                    }
+                    if (msg) msg.textContent = data.mensaje || '';
+                    if (data.fase === 'completado' && data.resultado) {
+                        clearInterval(this.progressInterval);
+                        this.progressInterval = null;
+                        const progressBox = document.getElementById('progress-box-' + tipo);
+                        if (progressBox) progressBox.style.display = 'none';
+                        if (msg) msg.textContent = 'Completado';
+                        const containerId = 'resultados-scanner-' + tipo;
+                        const btnId = 'boton-chat-' + tipo;
+                        this._renderResultados(tipo, data.resultado, containerId, btnId);
+                    }
+                })
+                .catch(() => {});
+        }, 300);
+    },
+
+    _renderResultados(tipo, resultado, containerId, btnId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const items = tipo === 'scanner_bb' ? resultado : (resultado.mejores || resultado.detalle || []);
+        const total = tipo === 'scanner_bb' ? (resultado.length || 0) : (resultado.pasaron_filtros || 0);
+        const escaneadas = tipo === 'scanner_bb' ? '-' : (resultado.total_escaneadas || 0);
+        const fueraBB = tipo === 'scanner_bb' ? '-' : (resultado.fuera_bollinger || 0);
+
+        if (!items || items.length === 0) {
+            container.innerHTML = '<p style="color:#ff4444;text-align:center;margin-top:10px;">No se encontraron oportunidades.</p>';
+            return;
+        }
+
+        let html = `<div class="resultados-summary">`;
+        if (tipo === 'scanner_bb') {
+            html += `📉 <strong>${items.length}</strong> oportunidades en ${escaneadas} activos`;
+        } else {
+            html += `🔍 <strong>${total}</strong> de <strong>${fueraBB}</strong> fuera de BB pasaron filtros (de ${escaneadas} escaneadas)`;
+        }
+        html += `</div>`;
+
+        const mostrar = tipo === 'scanner_bb' ? items.slice(0, 10) : items;
+        html += `<div class="resultados-lista">`;
+        mostrar.forEach((item, i) => {
+            const sym = item.symbol || '';
+            const price = item.price || item.precio || '';
+            const dir = item.direction || item.direccion || '';
+            const vol = item.vol_ratio || '';
+            const rsi = item.rsi || '';
+            const score = item.score || '';
+            const nota = item.note || item.warning_noticias || '';
+            const nv = item.niveles || {};
+            const entry = nv.entry || '';
+            const sl = nv.sl || '';
+            const tp1 = nv.tp1 || '';
+            const tp2 = nv.tp2 || '';
+            const rr = nv.rr || '';
+            const dirColor = dir === 'compra' || dir === 'buy' ? '#00ff88' : '#ff4444';
+
+            html += `<div class="resultado-item">
+                <div class="resultado-header">
+                    <span class="resultado-rank">#${i+1}</span>
+                    <strong class="resultado-sym">${sym}</strong>
+                    <span class="resultado-precio">$${price}</span>
+                    <span class="resultado-dir" style="color:${dirColor};">${dir.toUpperCase()}</span>
+                </div>
+                <div class="resultado-detalles">
+                    <span class="resultado-badge vol-badge">Vol ${vol}x</span>
+                    ${rsi ? `<span class="resultado-badge rsi-badge">RSI ${rsi}</span>` : ''}
+                    ${score ? `<span class="resultado-badge score-badge">Score ${score}/10</span>` : ''}
+                </div>
+                ${entry ? `<div class="resultado-niveles">
+                    <span class="nv-entry">↔ ${entry}</span>
+                    <span class="nv-sl">SL ${sl}</span>
+                    <span class="nv-tp">TP1 ${tp1}</span>
+                    ${tp2 ? `<span class="nv-tp">TP2 ${tp2}</span>` : ''}
+                    <span class="nv-rr">R/R ${rr}</span>
+                </div>` : ''}
+                ${nota ? `<div class="resultado-nota">${nota}</div>` : ''}
+            </div>`;
+        });
+        html += `</div>`;
+        container.innerHTML = html;
+
+        // Mostrar botón de enviar al chat
+        const btnContainer = document.getElementById(btnId);
+        if (btnContainer) btnContainer.style.display = 'block';
+
+        // Botón de veredicto final para screener
+        if (tipo === 'screener' && items.length > 0) {
+            const verdictContainer = document.getElementById('veredicto-screener');
+            if (verdictContainer) {
+                const vbtn = document.createElement('button');
+                vbtn.textContent = '🎯 Obtener Veredicto Final';
+                vbtn.style.cssText = 'width:100%;padding:8px;margin-top:8px;background:#ffaa00;border:none;border-radius:5px;color:#000;cursor:pointer;font-weight:bold;font-size:0.85em;';
+                vbtn.onclick = () => EstrategiasPanel._obtenerVeredicto();
+                verdictContainer.innerHTML = '';
+                verdictContainer.appendChild(vbtn);
+            }
+        }
+
+        // Si es screener, auto-enviar al chat con animación
+        if (tipo === 'screener' && items.length > 0) {
+            setTimeout(() => this._enviarAlChat('screener', true), 800);
+        }
+    },
+
+    _enviarAlChat(tipo, auto) {
+        const btnContainer = document.getElementById('boton-chat-' + tipo);
+        if (btnContainer) {
+            const btn = btnContainer.querySelector('button');
+            if (btn) {
+                btn.textContent = '⏳ Enviando...';
+                btn.disabled = true;
+            }
+        }
+        fetch('/api/scanner/enviar-al-chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({tipo: tipo === 'scanner_bb' ? 'scanner' : 'screener'})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.mensaje) {
+                addMessage(data.mensaje, 'jarvis');
+                // Animación para screener
+                if (tipo === 'screener' && auto) {
+                    const msgs = document.querySelectorAll('.msg.jarvis');
+                    if (msgs.length > 0) {
+                        const last = msgs[msgs.length - 1];
+                        last.style.animation = 'none';
+                        last.offsetHeight; // trigger reflow
+                        last.style.animation = 'screener-flash 1.5s ease';
+                    }
+                }
+                scrollDown();
+            }
+            if (btnContainer) {
+                const btn = btnContainer.querySelector('button');
+                if (btn) {
+                    btn.textContent = '✅ Enviado';
+                    setTimeout(() => {
+                        btn.textContent = tipo === 'scanner_bb' ? '📤 Enviar Top 3 al Chat' : '📤 Enviar Mejor Acción al Chat';
+                        btn.disabled = false;
+                    }, 2000);
+                }
+            }
+        })
+        .catch(() => {
+            if (btnContainer) {
+                const btn = btnContainer.querySelector('button');
+                if (btn) {
+                    btn.textContent = '❌ Error';
+                    btn.disabled = false;
+                }
+            }
+        });
+    },
+
+    _renderSardinas(checklist) {
+        const pasos = [
+            {id:'paso1_ventana', icono:'🕐', texto:'Ventana Horaria'},
+            {id:'paso2_tendencia_1d', icono:'📈', texto:'Tendencia 1D (Sesgo)'},
+            {id:'paso3_escenario_4h', icono:'🕓', texto:'Escenario 4H'},
+            {id:'paso4_bollinger_15m', icono:'📉', texto:'Bollinger Bands 15min'},
+            {id:'paso5_setup', icono:'🎯', texto:'Identificar Setup'},
+            {id:'paso6_niveles', icono:'✅', texto:'Entrada, SL y TPs'},
+            {id:'paso7_riesgo', icono:'💰', texto:'Gestión de Riesgo'},
+            {id:'paso8_psicologia', icono:'🧠', texto:'Psicología y Reglas'},
+            {id:'paso9_ejecucion', icono:'🚀', texto:'Lanzar Operación'},
+        ];
+        let html = '';
+        pasos.forEach(p => {
+            const paso = checklist[p.id] || {estado:'pendiente', mensaje:''};
+            const estado = paso.estado || 'pendiente';
+            const mensaje = paso.mensaje || '';
+            const grafico = paso.grafico_url || '';
+            const tv = paso.tradingview_url || '';
+            const fv = paso.finviz_url || '';
+            let claseEstado = '';
+            let iconoEstado = '⏳';
+            if (estado === 'completado') { claseEstado = 'completado'; iconoEstado = '✅'; }
+            if (estado === 'saltado') { claseEstado = 'saltado'; iconoEstado = '⛔'; }
+            if (estado === 'en_progreso') { claseEstado = 'en_progreso'; iconoEstado = '🔄'; }
+            html += '<div class="sardi\u00f1as-paso ' + claseEstado + '">';
+            html += '<div><span>' + iconoEstado + '</span> ' + p.icono + ' <strong>' + p.texto + '</strong></div>';
+            html += '<p style="font-size:0.8em;color:#ccc;margin:5px 0;">' + this._escapeHtml(mensaje) + '</p>';
+            if (grafico) html += '<img src="' + grafico + '" class="grafico-img">';
+            if (tv) html += '<br><a href="' + tv + '" target="_blank" class="sardi\u00f1as-link">📊 Ver en TradingView</a>';
+            if (fv) html += '<br><a href="' + fv + '" target="_blank" class="sardi\u00f1as-link">🔍 Ver en Finviz</a>';
+            html += '</div>';
+        });
+
+        // Botón para enviar resumen al chat
+        const pasoAct = checklist[this.pasoActual] || {};
+        if (pasoAct.mensaje && this.pasoActual) {
+            html += '<button onclick="EstrategiasPanel._enviarPasoAlChat()" style="width:100%;padding:8px;margin-top:10px;background:#00d4ff;border:none;border-radius:5px;color:#000;cursor:pointer;font-weight:bold;font-size:0.85em;">📤 Enviar resumen al chat</button>';
+        }
+
+        const container = document.getElementById('checklist-container');
+        if (container) container.innerHTML = html;
+    },
+
+    _obtenerVeredicto() {
+        const btn = document.getElementById('veredicto-screener');
+        if (btn) btn.innerHTML = '<p style="text-align:center;color:#ffaa00;font-size:0.85em;margin:5px 0;">⏳ Calculando veredicto final...</p>';
+        const cont = document.getElementById('veredicto-contenido');
+        if (cont) { cont.style.display = 'none'; cont.innerHTML = ''; }
+        fetch('/api/screener/final_verdict', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.veredicto) {
+                this._renderVeredicto(data.veredicto);
+                // Also send to chat
+                const v = data.veredicto;
+                let chatMsg = `🎯 **VEREDICTO FINAL — ${v.symbol}**\n`;
+                chatMsg += `Score: ${v.score}/100 | ${v.direccion} | ${v.fuerza}\n\n`;
+                chatMsg += `${v.resumen}\n\n`;
+                chatMsg += `📊 Probabilidad de éxito: ${v.probabilidad_exito}\n`;
+                chatMsg += `📈 Fuerza del movimiento: ${v.fuerza_movimiento}\n`;
+                chatMsg += `\n🔑 Niveles Operativos:\n`;
+                chatMsg += `• Entrada: $${v.niveles_operativos.entrada}\n`;
+                chatMsg += `• Stop Loss: $${v.niveles_operativos.stop_loss}\n`;
+                chatMsg += `• TP1: $${v.niveles_operativos.take_profit_1}\n`;
+                chatMsg += `• TP2: $${v.niveles_operativos.take_profit_2}\n`;
+                if (v.razones_psicologicas) chatMsg += `\n🧠 ${v.razones_psicologicas}\n`;
+                if (v.advertencia) chatMsg += `\n⚠️ ${v.advertencia}`;
+                addMessage(chatMsg, 'jarvis');
+                scrollDown();
+            } else if (data.error) {
+                if (btn) btn.innerHTML = `<p style="text-align:center;color:#ff4444;font-size:0.8em;margin:5px 0;">❌ ${data.error}</p>`;
+            }
+        })
+        .catch(() => {
+            if (btn) btn.innerHTML = '<p style="text-align:center;color:#ff4444;font-size:0.8em;margin:5px 0;">❌ Error al obtener veredicto</p>';
+        });
+    },
+
+    _renderVeredicto(v) {
+        const cont = document.getElementById('veredicto-contenido');
+        if (!cont) return;
+        const btn = document.getElementById('veredicto-screener');
+        if (btn) btn.innerHTML = '';
+        const dirEmoji = v.direccion === 'COMPRA' ? '🟢' : '🔴';
+        const dirColor = v.direccion === 'COMPRA' ? '#00ff88' : '#ff4444';
+        let html = `<div style="background:#0d0d1a;border:2px solid #ffaa00;border-radius:8px;padding:10px;margin-top:4px;">`;
+        html += `<h3 style="color:#ffaa00;margin:0 0 6px 0;font-size:1em;text-align:center;">🎯 VEREDICTO FINAL</h3>`;
+        html += `<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;">
+            <span style="color:white;font-size:1.1em;font-weight:bold;">${v.symbol}</span>
+            <span style="color:${dirColor};font-weight:bold;">${dirEmoji} ${v.direccion}</span>
+            <span style="background:#ffaa00;color:#000;padding:2px 8px;border-radius:4px;font-weight:bold;font-size:0.85em;">${v.score}/100</span>
+        </div>`;
+        html += `<p style="color:#ffaa00;font-size:0.8em;text-align:center;margin:4px 0;">${v.fuerza}</p>`;
+        html += `<p style="color:#ccc;font-size:0.8em;margin:6px 0;">${v.resumen}</p>`;
+        // Datos concretos
+        if (v.datos_concretos) {
+            html += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin:6px 0;justify-content:center;">`;
+            const d = v.datos_concretos;
+            if (d.precio_actual) html += `<span class="resultado-badge" style="color:#00d4ff;">Precio $${d.precio_actual}</span>`;
+            if (d.volumen_ratio) html += `<span class="resultado-badge" style="color:#aaa;">Vol ${d.volumen_ratio}x</span>`;
+            if (d.rsi) html += `<span class="resultado-badge" style="color:#ffaa00;">RSI ${d.rsi}</span>`;
+            if (d.atr) html += `<span class="resultado-badge" style="color:#888;">ATR ${d.atr}</span>`;
+            if (d.noticias_sentimiento) html += `<span class="resultado-badge" style="color:#00ff88;">${d.noticias_sentimiento}</span>`;
+            if (d.spy_tendencia) html += `<span class="resultado-badge" style="color:#00d4ff;">SPY ${d.spy_tendencia}</span>`;
+            if (d.vix) html += `<span class="resultado-badge" style="color:#888;">VIX ${d.vix}</span>`;
+            html += `</div>`;
+        }
+        // Niveles
+        if (v.niveles_operativos) {
+            const n = v.niveles_operativos;
+            html += `<div class="resultado-niveles" style="margin:6px 0;">
+                <span class="nv-entry">↔ Ent ${n.entrada}</span>
+                <span class="nv-sl">SL ${n.stop_loss}</span>
+                <span class="nv-tp">TP1 ${n.take_profit_1}</span>
+                <span class="nv-tp">TP2 ${n.take_profit_2}</span>
+            </div>`;
+        }
+        if (v.probabilidad_exito) html += `<p style="color:#00ff88;font-size:0.8em;margin:4px 0;">📊 ${v.probabilidad_exito}</p>`;
+        if (v.fuerza_movimiento) html += `<p style="color:#00d4ff;font-size:0.8em;margin:4px 0;">📈 ${v.fuerza_movimiento}</p>`;
+        if (v.razones_psicologicas) html += `<p style="color:#ccc;font-size:0.75em;margin:4px 0;font-style:italic;">🧠 ${v.razones_psicologicas}</p>`;
+        if (v.advertencia) html += `<p style="color:#ff4444;font-size:0.75em;margin:4px 0;">⚠️ ${v.advertencia}</p>`;
+        html += `</div>`;
+        cont.innerHTML = html;
+        cont.style.display = 'block';
+        cont.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+    },
+
+    _enviarPasoAlChat() {
+        const paso = this._sardinasState ? this._sardinasState[this.pasoActual] : null;
+        const mensaje = paso ? paso.mensaje : '';
+        if (mensaje) {
+            addMessage('🌴 **Yoel Sardiñas — ' + this.symbol + '**\n' + mensaje, 'jarvis');
+            scrollDown();
+        }
+    },
+
+    iniciarPolling() {
+        if (this.pollingInterval) clearInterval(this.pollingInterval);
+        this.pollingInterval = setInterval(() => {
+            if (!this.activo || this.estrategiaActual !== 'sardinas') return;
+            fetch('/api/sardi\u00f1as/estado')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.activo) return;
+                    this.pasoActual = data.paso_actual || '';
+                    this._sardinasState = data.checklist || {};
+                    this._renderSardinas(data.checklist || {});
+                })
+                .catch(() => {});
+        }, 2000);
+    },
+
+    cerrar() {
+        const panel = document.getElementById('panel-estrategias-contenido');
+        if (panel) panel.innerHTML = '';
+        this.activo = false;
+        if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
+        if (this.progressInterval) { clearInterval(this.progressInterval); this.progressInterval = null; }
+        // Ocultar panel derecho
+        const ec = document.getElementById('estrategias-content');
+        if (ec) ec.classList.remove('visible');
+        this._mostrarInputSymbol(false);
+    },
+
+    _escapeHtml(text) {
+        if (!text) return '';
+        const d = document.createElement('div');
+        d.textContent = text;
+        return d.innerHTML;
+    },
+
+    confirmarPaso(paso, respuesta) {
+        if (!paso) return;
+        fetch('/api/sardi\u00f1as/confirmar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({paso: paso, respuesta: respuesta})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.paso_actual) this.pasoActual = data.paso_actual;
+            if (data.checklist) {
+                this._sardinasState = data.checklist;
+                this._renderSardinas(data.checklist);
+            }
+        })
+        .catch(() => {});
+    }
+};
+
+function cerrarPanelEstrategias() {
+    EstrategiasPanel.cerrar();
+}
+
+// ── Detectar activación desde /api/command ──
+(function() {
+    const origFetch = window.fetch;
+    window.fetch = function() {
+        return origFetch.apply(this, arguments).then(function(response) {
+            const cloned = response.clone();
+            if (response.url && response.url.includes('/api/command') && response.ok) {
+                cloned.json().then(function(data) {
+                    if (data && data.sardi\u00f1as_activar && data.symbol) {
+                        EstrategiasPanel.abrir('sardinas', data.symbol);
+                    }
+                    if (data && data.veredicto) {
+                        setTimeout(function() {
+                            EstrategiasPanel.abrir('screener');
+                            setTimeout(function() {
+                                EstrategiasPanel._renderVeredicto(data.veredicto);
+                            }, 300);
+                        }, 100);
+                    }
+                }).catch(function() {});
+            }
+            return response;
+        });
+    };
+})();
+
+// Interceptar envío de mensaje para redirigir confirmaciones
+(function() {
+    const origEnviar = window.enviarComando;
+    if (origEnviar) {
+        window.enviarComando = function() {
+            const input = document.querySelector('.input-row input');
+            if (!input) return origEnviar();
+            const comando = input.value.trim();
+            if (EstrategiasPanel.activo && EstrategiasPanel.estrategiaActual === 'sardinas' && EstrategiasPanel.pasoActual) {
+                const palabrasConfirmacion = /\b(s[ií]|s[ií] claro|confirmo|ok|de acuerdo|adelante|dale|vamos|siga|procedo|afirmativo|correcto|yes|yeah)\b/i;
+                if (palabrasConfirmacion.test(comando) && comando.split(/\s+/).length <= 3) {
+                    input.value = '';
+                    EstrategiasPanel.confirmarPaso(EstrategiasPanel.pasoActual, 'sí');
+                    return;
+                }
+                const palabrasNegacion = /\b(no|nop|nel|negativo|no quiero|para|espera|detente|cancelar)\b/i;
+                if (palabrasNegacion.test(comando) && comando.split(/\s+/).length <= 3) {
+                    input.value = '';
+                    EstrategiasPanel.confirmarPaso(EstrategiasPanel.pasoActual, 'no');
+                    return;
+                }
+            }
+            return origEnviar();
+        };
+    }
+})();
+
+// ── Collapsible sidebar ──
+function toggleSidebar() {
+    const sidebar = document.getElementById('ts-sidebar');
+    if (!sidebar) return;
+    sidebar.classList.toggle('collapsed');
+    document.body.classList.toggle('sidebar-collapsed', sidebar.classList.contains('collapsed'));
+}
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(function() {});
+}
+</script>
+
+<!-- Left sidebar Trading System -->
+<div id="ts-sidebar">
+  <button onclick="EstrategiasPanel.abrir('sardinas')" title="Yoel Sardiñas The Tradingway" class="est-boton" data-est="sardinas">
+    📈<span class="ts-sidebar-label">Yoel</span>
+  </button>
+  <button onclick="EstrategiasPanel.abrir('scanner_bb')" title="Scanner Bollinger" class="est-boton" data-est="scanner_bb">
+    🔍<span class="ts-sidebar-label">Scanner</span>
+  </button>
+  <button onclick="EstrategiasPanel.abrir('screener')" title="Screener de Mercado" class="est-boton" data-est="screener">
+    📊<span class="ts-sidebar-label">Screener</span>
+  </button>
+  <button onclick="EstrategiasPanel.abrir('ts_panel')" title="Panel en vivo QuantumTrade" class="est-boton" data-est="ts_panel">
+    📡<span class="ts-sidebar-label">Panel</span>
+  </button>
+  <button onclick="EstrategiasPanel.abrir('ts_analizar')" title="Análisis multi-timeframe" class="est-boton" data-est="ts_analizar">
+    🔬<span class="ts-sidebar-label">Analizar</span>
+  </button>
+  <button onclick="EstrategiasPanel.abrir('ts_escaner')" title="Escáner de mercado" class="est-boton" data-est="ts_escaner">
+    📡<span class="ts-sidebar-label">Escáner</span>
+  </button>
+</div>
+<button id="ts-sidebar-toggle" onclick="toggleSidebar()" title="Mostrar/Ocultar sidebar" aria-label="Toggle sidebar">
+  <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.5">
+    <path d="M3 1 L7 4 L3 7"/>
+  </svg>
+</button>
+
+</body>
+</html>

@@ -1,0 +1,628 @@
+texto,intent
+hola,greeting
+buenos días,greeting
+buenas tardes,greeting
+buenas noches,greeting
+qué tal,greeting
+hey jarvis,greeting
+saludos,greeting
+hola jarvis,greeting
+buenas,greeting
+hey,greeting
+good morning,greeting
+hi,greeting
+hello,greeting
+que tal jarvis,greeting
+oye jarvis,greeting
+cómo estás,how_are_you
+cómo andas,how_are_you
+qué hay,how_are_you
+cómo te encuentras,how_are_you
+cómo sigues,how_are_you
+cómo estás jarvis,how_are_you
+cómo andas hoy,how_are_you
+que tal estas,how_are_you
+cómo estás hoy,how_are_you
+cómo te va,how_are_you
+cómo estamos,how_are_you
+qué me cuentas,how_are_you
+qué hora es,time
+dime la hora,time
+hora actual,time
+son las,time
+qué día es hoy,time
+qué fecha es,time
+fecha actual,time
+a qué día estamos,time
+dime el día,time
+dame la hora,time
+qué hora tienes,time
+hora del sistema,time
+hora oficial,time
+me das la hora,time
+que hora es exactamente,time
+clima en La Habana,weather
+cómo está el clima,weather
+qué temperatura hace,weather
+va a llover hoy,weather
+hace frío afuera,weather
+hace calor en Madrid,weather
+pronóstico para mañana,weather
+cómo está el tiempo,weather
+temperatura en Bogotá,weather
+está lloviendo,weather
+hay sol hoy,weather
+clima en Barcelona,weather
+qué tiempo hace,weather
+pronóstico del clima,weather
+va a hacer calor,weather
+dame las noticias,news
+noticias de tecnología,news
+últimas noticias,news
+qué pasó hoy,news
+noticias de deportes,news
+actualidad,news
+titulares del día,news
+noticias sobre inteligencia artificial,news
+qué hay de nuevo,news
+noticias de ciencia,news
+novedades,news
+noticias de salud,news
+noticias de economía,news
+qué noticias hay,news
+cómo va Apple,stocks
+precio de bitcoin,stocks
+cotización de Tesla,stocks
+bolsa de Microsoft,stocks
+cómo va BTC,stocks
+dame el precio de Google,stocks
+qué tal va Amazon,stocks
+cotiza Apple,stocks
+valor de NVIDIA,stocks
+bolsa hoy,stocks
+acciones de Meta,stocks
+precio del petróleo,stocks
+cómo está el mercado,stocks
+cotización del dólar,stocks
+ibex 35,stocks
+pon música de Avicii,music
+reproduce Queen,music
+quiero escuchar a Shakira,music
+poner música relajante,music
+reproduce mi playlist,music
+música clásica,music
+pon canciones de los 80,music
+escuchar música,music
+toca algo de rock,music
+siguiente canción,music
+pausa la música,music
+volumen más alto,music
+cerrar la música,music
+silencio,music
+basta de música,music
+abre Chrome,apps
+abre el bloc de notas,apps
+abre la calculadora,apps
+abre Spotify,apps
+abre Word,apps
+abre Discord,apps
+abre VSCode,apps
+abre el navegador,apps
+abre la terminal,apps
+abre PowerPoint,apps
+abre Excel,apps
+abre Paint,apps
+abre la papelera,apps
+abre el explorador,apps
+abre las carpetas,apps
+abre el Dota,games
+jugar Fortnite,games
+abre el Minecraft,games
+lanzar CSGO,games
+echar una partida de Valorant,games
+dale al League of Legends,games
+ve abriendo el Dota,games
+voy a jugar Warzone,games
+vamos a jugar FIFA,games
+abre GTA V,games
+juega al Age of Empires,games
+pon el Call of Duty,games
+lanzar juego,games
+abrir el Among Us,games
+jugamos al Rocket League,games
+abre el principito,books
+qué libros tengo,books
+lista mis libros,books
+abre el PDF de física,books
+mis libros están en la carpeta Libros,books
+leer el quijote,books
+muéstrame los libros,books
+abre libro llamado harry potter,books
+tengo libros disponibles,books
+ver libros,books
+enseñame los libros,books
+abre el PDF de matemáticas,books
+que libros tengo en la biblioteca,books
+lista de libros,books
+quiero leer un libro,books
+catálogo de películas,catalogo
+muestra el catálogo,catalogo
+películas disponibles,catalogo
+mis pelis,catalogo
+escanea películas,catalogo
+actualizar catálogo,catalogo
+lista pelis,catalogo
+filmoteca,catalogo
+videoteca,catalogo
+reproduce la 3,catalogo
+elige la 5,catalogo
+la 12,catalogo
+película 7,catalogo
+abre la 2,catalogo
+de qué trata la película 5,movie_info
+sinopsis de la 3,movie_info
+información sobre la película 12,movie_info
+qué sabes de la número 7,movie_info
+de qué va la 9,movie_info
+sinopsis de la película 2,movie_info
+de qué trata la 4,movie_info
+información de la peli 8,movie_info
+qué es la película 6,movie_info
+de qué trata el número 3,movie_info
+cuéntame un chiste,jokes
+chiste,jokes
+hazme reír,jokes
+dime un chiste,jokes
+una broma,jokes
+cuéntame algo gracioso,jokes
+dime un chiste de programadores,jokes
+quiero reírme,jokes
+algo divertido,jokes
+un chiste corto,jokes
+bromea un poco,jokes
+dame un chiste malo,jokes
+cuenta un chiste,jokes
+cuéntame algo interesante,curious_fact
+dato curioso,curious_fact
+dime algo nuevo,curious_fact
+qué hay de bueno,curious_fact
+algo interesante,curious_fact
+háblame de algo curioso,curious_fact
+cuéntame un cuento,curious_fact
+qué sabes interesante,curious_fact
+dime un dato curioso,curious_fact
+algo que no sepa,curious_fact
+sabías algo,curious_fact
+tienes algo nuevo,curious_fact
+dato curioso del día,curious_fact
+me llamo Juan,user_name
+soy Pedro,user_name
+mi nombre es María,user_name
+me llamo Carlos,user_name
+soy Ana,user_name
+mi nombre es Javier,user_name
+soy Laura,user_name
+me llamo Roberto,user_name
+me llamo Sofía,user_name
+quién te creó,creator
+quién te hizo,creator
+quién te programó,creator
+quién te desarrolló,creator
+tu creador,creator
+de quién eres creación,creator
+quién te diseñó,creator
+quién te inventó,creator
+quién te construyó,creator
+quién eres,who_are_you
+qué eres,who_are_you
+cómo te llamas,who_are_you
+preséntate,who_are_you
+eres real,who_are_you
+tienes conciencia,who_are_you
+explícame quién eres,who_are_you
+dime quién eres,who_are_you
+qué eres exactamente,who_are_you
+te presentas,who_are_you
+qué puedes hacer,capabilities
+ayuda,capabilities
+comandos,capabilities
+cómo funcionas,capabilities
+qué sabes hacer,capabilities
+tus capacidades,capabilities
+qué módulos tienes,capabilities
+qué servicios tienes,capabilities
+lista de comandos,capabilities
+qué programas tienes,capabilities
+tus funciones,capabilities
+qué haces,capabilities
+qué sabes,capabilities
+muestra la ayuda,capabilities
+gracias,thanks
+muchas gracias,thanks
+te agradezco,thanks
+thank you,thanks
+gracias totales,thanks
+agradecido,thanks
+gracias amigo,thanks
+thanks,thanks
+gracias jarvis,thanks
+muy agradecido,thanks
+de verdad gracias,thanks
+chau,goodbye
+adiós,goodbye
+nos vemos,goodbye
+hasta luego,goodbye
+bye,goodbye
+hasta pronto,goodbye
+me retiro,goodbye
+me voy,goodbye
+salir,goodbye
+exit,goodbye
+goodbye,goodbye
+ciao,goodbye
+hasta la vista,goodbye
+nos vemos luego,goodbye
+que te vaya bien,goodbye
+eres genial,compliment
+eres inteligente,compliment
+eres el mejor,compliment
+eres asombroso,compliment
+eres un crack,compliment
+eres impresionante,compliment
+eres grande,compliment
+eres increíble,compliment
+eres un genio,compliment
+eres un capo,compliment
+qué bueno eres,compliment
+eres espectacular,compliment
+eres tonto,insult
+eres inútil,insult
+qué basura,insult
+eres un idiota,insult
+no sirves para nada,insult
+eres un estúpido,insult
+callate,insult
+maldito programa,insult
+eres un imbécil,insult
+qué porquería,insult
+peor asistente,insult
+no haces nada,insult
+desinstalado,insult
+ok,affirmation
+dale,affirmation
+perfecto,affirmation
+excelente,affirmation
+está bien,affirmation
+de acuerdo,affirmation
+suena bien,affirmation
+genial,affirmation
+vale,affirmation
+claro,affirmation
+bueno,affirmation
+simón,affirmation
+me gusta,affirmation
+bien,affirmation
+correcto,affirmation
+estoy triste,sad
+estoy cansado,sad
+me siento mal,sad
+estoy aburrido,sad
+fatal,sad
+estresado,sad
+preocupado,sad
+deprimido,sad
+no muy bien,sad
+estoy enfermo,sad
+regular,sad
+estoy fatal,sad
+qué estrés,sad
+qué te parece,followup
+qué opinas,followup
+y eso,followup
+explica eso,followup
+cuéntame más de eso,followup
+es bueno,followup
+es confiable,followup
+tú qué crees,followup
+cómo lo ves,followup
+me conviene,followup
+qué quiere decir eso,followup
+es malo,followup
+a qué te refieres,followup
+en el mercado,followup
+dime tu opinión,followup
+amplía,amplify
+más información,amplify
+dime más,amplify
+explícame más,amplify
+ahonda en eso,amplify
+dame más detalles,amplify
+quiero saber más,amplify
+sigue,amplify
+amplíame,amplify
+continúa,amplify
+más detalles,amplify
+explícame más a fondo,amplify
+dame más datos,amplify
+"dije Apple, me equivoqué, era Microsoft",correction
+"no, es Tesla no Apple",correction
+quise decir Google,correction
+"me equivoqué, es Madrid no Barcelona",correction
+corrijo: era el 3 no el 5,correction
+en realidad era María no Juan,correction
+decía que era azul pero es rojo,correction
+"no, es verde no azul",correction
+rectifico: el resultado es 42,correction
+me equivoqué de persona,correction
+aprende que mi color favorito es azul,memory_learn
+recuerda que mi perro se llama Toby,memory_learn
+memoriza que la capital de Francia es París,memory_learn
+guarda que mi cumpleaños es el 15 de mayo,memory_learn
+aprendete que 2+2 es 4,memory_learn
+graba que vivo en La Habana,memory_learn
+recuerda que no me gusta el café,memory_learn
+memoriza que mi novia se llama Ana,memory_learn
+olvida que mi color favorito es azul,memory_forget
+olvídate de Toby,memory_forget
+borra que la capital de Francia es París,memory_forget
+elimina ese recuerdo,memory_forget
+olvida lo que te dije de Ana,memory_forget
+borra mi cumpleaños,memory_forget
+olvida ese dato,memory_forget
+qué sabes,memory_show
+qué aprendiste,memory_show
+qué has aprendido,memory_show
+muestra tu memoria,memory_show
+lista tus hechos,memory_show
+qué has memorizado,memory_show
+qué recuerdas,memory_show
+qué conoces,memory_show
+qué sabes de mí,memory_show
+artículo 109 de la Constitución Cubana,article
+artículo 20,article
+ley 60,article
+resolución 42,article
+decreto 101,article
+artículo 15 de la Constitución,article
+ley general de educación,article
+artículo 10 del código penal,article
+decreto ley 300,article
+art 5 de la constitución,article
+busca recetas de cocina,web_search
+buscar inteligencia artificial,web_search
+encuentra el mejor restaurante en Madrid,web_search
+quiero buscar vuelos a Cancún,web_search
+necesito información sobre el cambio climático,web_search
+averiguar cuánto cuesta un iPhone,web_search
+busca hoteles en Varadero,web_search
+investiga sobre el telescopio James Webb,web_search
+buscar noticias de Cuba,web_search
+encuentra el precio de un coche eléctrico,web_search
+qué es la gravedad,wikipedia_search
+quién es Albert Einstein,wikipedia_search
+cómo funciona el motor de combustión,wikipedia_search
+qué significa fotosíntesis,wikipedia_search
+dame información sobre internet de las cosas,wikipedia_search
+explícame qué es la teoría de cuerdas,wikipedia_search
+qué es la inteligencia artificial,wikipedia_search
+quién fue Simón Bolívar,wikipedia_search
+qué son los agujeros negros,wikipedia_search
+cómo funciona un panel solar,wikipedia_search
+qué significa ADN,wikipedia_search
+dame información sobre el cambio climático,wikipedia_search
+dónde queda La Habana,maps
+maps,maps
+navega a la plaza mayor,maps
+ubicación de la Torre Eiffel,maps
+cómo llegar a Madrid,maps
+localiza restaurantes cerca,maps
+busca en maps cafeterías,maps
+dónde está el Capitolio,maps
+navegar a mi casa,maps
+cómo llegar al aeropuerto,maps
+google maps,maps
+estado del sistema,system_info
+información de la PC,system_info
+procesador,system_info
+memoria RAM,system_info
+batería,system_info
+disco,system_info
+componentes del equipo,system_info
+rendimiento del sistema,system_info
+hardware,system_info
+estado de la computadora,system_info
+qué PC tengo,system_info
+especificaciones,system_info
+analiza los discos,disks
+estado de los discos,disks
+espacio en disco,disks
+cuánto espacio libre tengo,disks
+almacenamiento lleno,disks
+cómo están los discos,disks
+ver discos,disks
+analizar el disco C,disks
+espacio del disco duro,disks
+capacidad de disco,disks
+desfragmentar disco C,fragmentation
+analizar fragmentación,fragmentation
+fragmentación del disco D,fragmentation
+necesita desfragmentar,fragmentation
+estado de fragmentación,fragmentation
+desfragmentar el disco,fragmentation
+verificar backups,backups
+copia de seguridad,backups
+cómo están los backups,backups
+tienes backup,backups
+copias de seguridad,backups
+último backup,backups
+crear copia de seguridad,backups
+respaldar el sistema,backups
+ver USB,usb
+unidades externas,usb
+pendrive conectado,usb
+qué USB tengo,usb
+memorias USB,usb
+discos externos,usb
+dispositivos USB,usb
+ver unidades extraíbles,usb
+salud,health
+pulso,health
+tendencias de salud,health
+consejo de salud,health
+estrés,health
+sueño,health
+frecuencia cardíaca,health
+bienestar,health
+ejercicio,health
+calorías,health
+conectar reloj,health
+ritmo cardíaco,health
+recuerda que tengo reunión a las 3,reminders
+recordatorio en 10 minutos,reminders
+alarma a las 7:00,reminders
+despertador mañana a las 6,reminders
+lista de pendientes,reminders
+mis recordatorios,reminders
+no olvides comprar pan,reminders
+acordarme de llamar al médico,reminders
+recordar que mañana es cumpleaños,reminders
+recordatorio cada día a las 8,reminders
+correo,email
+bandeja de entrada,email
+enviar correo,email
+inbox,email
+escribir correo,email
+enviar mail,email
+revisar correo,email
+nuevo correo,email
+bandeja,email
+whatsapp a Juan,whatsapp
+enviar WhatsApp,whatsapp
+wa,whatsapp
+whatsapp +5351234567 Hola,whatsapp
+whatsap,whatsapp
+enviar mensaje por WhatsApp,whatsapp
+abre WhatsApp,whatsapp
+cuánto es 2+2,mathematics
+calcula 15 por 3,mathematics
+raíz cuadrada de 144,mathematics
+5 elevado a la 3,mathematics
+seno de 30,mathematics
+logaritmo de 100,mathematics
+resuelve 2+3 por 4,mathematics
+derivada de x al cuadrado,mathematics
+25 por ciento de 200,mathematics
+cuánto da 7 entre 3,mathematics
+calcula 10 más 8,mathematics
+raíz de 81,mathematics
+sabes cómo se instala Python,how_to
+puedes hacer un café,how_to
+cómo se usa git,how_to
+cómo se configura el WiFi,how_to
+sabes algo de la luna,how_to
+eres capaz de dibujar,how_to
+cómo se hace una página web,how_to
+sabes programar,how_to
+cómo se descarga un video,how_to
+puedes ayudarme a aprender,how_to
+cuál es mi IP,ip_info
+mi dirección IP,ip_info
+mi IP pública,ip_info
+dime mi IP,ip_info
+ver mi IP,ip_info
+qué IP tengo,ip_info
+mi IP local,ip_info
+saber mi dirección IP,ip_info
+perfiles wifi,wifi_info
+contraseña del wifi,wifi_info
+clave del wifi,wifi_info
+redes wifi disponibles,wifi_info
+password del wifi,wifi_info
+ver redes wifi,wifi_info
+contraseña de mi wifi,wifi_info
+enciende el wifi,toggles
+activa bluetooth,toggles
+apaga el bluetooth,toggles
+desactivar wifi,toggles
+activa la luz nocturna,toggles
+night light,toggles
+enciende el apache,toggles
+desactiva xampp,toggles
+apaga el wifi,toggles
+activa el modo nocturno,toggles
+encender bluetooth,toggles
+crear punto de restauración,restore_point
+restore point,restore_point
+respaldo del sistema,restore_point
+proteger el sistema,restore_point
+crear un punto de restauración,restore_point
+desinstalar Chrome,uninstall
+eliminar programa,uninstall
+borrar aplicación,uninstall
+desinstalar VLC,uninstall
+quitar este programa,uninstall
+desinstalar Firefox,uninstall
+naranja,do_not_understand
+plutonio,do_not_understand
+tornillo,do_not_understand
+esternocleidomastoideo,do_not_understand
+tricotilomanía,do_not_understand
+xilófono,do_not_understand
+bizcocho,do_not_understand
+paralelepípedo,do_not_understand
+codifica hola mundo a base64,encode_decode
+decodifica esto en base64,encode_decode
+codifica Hello World,encode_decode
+decodificar base64,encode_decode
+encode este texto,encode_decode
+apaga la computadora,shutdown
+reinicia el PC,shutdown
+apagar el equipo,shutdown
+restart,shutdown
+shutdown,shutdown
+reiniciar el sistema,shutdown
+apagar pc,shutdown
+cancela el apagado,shutdown
+no apagues,shutdown
+analizar archivo con VirusTotal,virustotal
+escanear archivo,virustotal
+buscar virus,virustotal
+analizar este archivo,virustotal
+malware scan,virustotal
+antivirus,virustotal
+continúa,continue
+sigue hablando,continue
+repite eso,continue
+continue,continue
+sigue,continue
+repite lo que dijiste,continue
+ve a youtube.com,open_url
+abre google.com,open_url
+navega a github.com,open_url
+entra a python.org,open_url
+abre la página stackoverflow.com,open_url
+ir a facebook.com,open_url
+no,denial
+no gracias,denial
+nunca,denial
+para nada,denial
+no quiero,denial
+nop,denial
+nel,denial
+negativo,denial
+sí,affirmative_answer
+sí claro,affirmative_answer
+adelante,affirmative_answer
+simón,affirmative_answer
+sipo,affirmative_answer
+sí por favor,affirmative_answer
+yes,affirmative_answer
+yeah,affirmative_answer
+correcto,affirmative_answer
+argumenta eso,argue
+debate sobre IA,argue
+razona sobre el cambio climático,argue
+opina sobre la política,argue
+analiza esto,argue
+reflexiona sobre la vida,argue
+contradice eso,argue

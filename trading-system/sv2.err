@@ -1,0 +1,475 @@
+INFO:     Started server process [11288]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    [Errno 10048] error while attempting to bind on address ('0.0.0$SPY: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['SPY']: possibly delisted; no price data found  (period=6mo)
+$SPY: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['SPY']: possibly delisted; no price data found  (period=6mo)
+$QQQ: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['QQQ']: possibly delisted; no price data found  (period=6mo)
+$QQQ: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['QQQ']: possibly delisted; no price data found  (period=6mo)
+$IWM: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['IWM']: possibly delisted; no price data found  (period=6mo)
+$IWM: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['IWM']: possibly delisted; no price data found  (period=6mo)
+$DIA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['DIA']: possibly delisted; no price data found  (period=6mo)
+$DIA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['DIA']: possibly delisted; no price data found  (period=6mo)
+$AAPL: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AAPL']: possibly delisted; no price data found  (period=6mo)
+$AAPL: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AAPL']: possibly delisted; no price data found  (period=6mo)
+$MSFT: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['MSFT']: possibly delisted; no price data found  (period=6mo)
+$MSFT: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['MSFT']: possibly delisted; no price data found  (period=6mo)
+$GOOGL: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['GOOGL']: possibly delisted; no price data found  (period=6mo)
+$GOOGL: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['GOOGL']: possibly delisted; no price data found  (period=6mo)
+$AMZN: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AMZN']: possibly delisted; no price data found  (period=6mo)
+$AMZN: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AMZN']: possibly delisted; no price data found  (period=6mo)
+$NVDA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['NVDA']: possibly delisted; no price data found  (period=6mo)
+$NVDA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['NVDA']: possibly delisted; no price data found  (period=6mo)
+$META: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['META']: possibly delisted; no price data found  (period=6mo)
+$META: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['META']: possibly delisted; no price data found  (period=6mo)
+$TSLA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['TSLA']: possibly delisted; no price data found  (period=6mo)
+$TSLA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['TSLA']: possibly delisted; no price data found  (period=6mo)
+$AMD: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AMD']: possibly delisted; no price data found  (period=6mo)
+$AMD: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AMD']: possibly delisted; no price data found  (period=6mo)
+$INTC: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['INTC']: possibly delisted; no price data found  (period=6mo)
+$INTC: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['INTC']: possibly delisted; no price data found  (period=6mo)
+$MU: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['MU']: possibly delisted; no price data found  (period=6mo)
+$MU: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['MU']: possibly delisted; no price data found  (period=6mo)
+$PLTR: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['PLTR']: possibly delisted; no price data found  (period=6mo)
+$PLTR: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['PLTR']: possibly delisted; no price data found  (period=6mo)
+$COIN: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['COIN']: possibly delisted; no price data found  (period=6mo)
+$COIN: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['COIN']: possibly delisted; no price data found  (period=6mo)
+$SPY: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['SPY']: possibly delisted; no price data found  (period=6mo)
+$SPY: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['SPY']: possibly delisted; no price data found  (period=6mo)
+$QQQ: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['QQQ']: possibly delisted; no price data found  (period=6mo)
+$QQQ: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['QQQ']: possibly delisted; no price data found  (period=6mo)
+$IWM: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['IWM']: possibly delisted; no price data found  (period=6mo)
+$IWM: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['IWM']: possibly delisted; no price data found  (period=6mo)
+$DIA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['DIA']: possibly delisted; no price data found  (period=6mo)
+$DIA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['DIA']: possibly delisted; no price data found  (period=6mo)
+$GOOGL: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['GOOGL']: possibly delisted; no price data found  (period=6mo)
+$AMD: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AMD']: possibly delisted; no price data found  (period=6mo)
+$AMD: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AMD']: possibly delisted; no price data found  (period=6mo)
+$INTC: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['INTC']: possibly delisted; no price data found  (period=6mo)
+$INTC: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['INTC']: possibly delisted; no price data found  (period=6mo)
+$SPY: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['SPY']: possibly delisted; no price data found  (period=6mo)
+$SPY: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['SPY']: possibly delisted; no price data found  (period=6mo)
+$QQQ: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['QQQ']: possibly delisted; no price data found  (period=6mo)
+$QQQ: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['QQQ']: possibly delisted; no price data found  (period=6mo)
+$IWM: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['IWM']: possibly delisted; no price data found  (period=6mo)
+$IWM: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['IWM']: possibly delisted; no price data found  (period=6mo)
+$DIA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['DIA']: possibly delisted; no price data found  (period=6mo)
+$DIA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['DIA']: possibly delisted; no price data found  (period=6mo)
+$AAPL: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AAPL']: possibly delisted; no price data found  (period=6mo)
+$AAPL: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AAPL']: possibly delisted; no price data found  (period=6mo)
+$MSFT: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['MSFT']: possibly delisted; no price data found  (period=6mo)
+$MSFT: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['MSFT']: possibly delisted; no price data found  (period=6mo)
+$GOOGL: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['GOOGL']: possibly delisted; no price data found  (period=6mo)
+$GOOGL: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['GOOGL']: possibly delisted; no price data found  (period=6mo)
+$AMZN: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AMZN']: possibly delisted; no price data found  (period=6mo)
+$AMZN: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AMZN']: possibly delisted; no price data found  (period=6mo)
+$NVDA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['NVDA']: possibly delisted; no price data found  (period=6mo)
+$NVDA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['NVDA']: possibly delisted; no price data found  (period=6mo)
+$META: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['META']: possibly delisted; no price data found  (period=6mo)
+$META: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['META']: possibly delisted; no price data found  (period=6mo)
+$TSLA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['TSLA']: possibly delisted; no price data found  (period=6mo)
+$TSLA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['TSLA']: possibly delisted; no price data found  (period=6mo)
+$AMD: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AMD']: possibly delisted; no price data found  (period=6mo)
+$AMD: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AMD']: possibly delisted; no price data found  (period=6mo)
+$INTC: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['INTC']: possibly delisted; no price data found  (period=6mo)
+$INTC: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['INTC']: possibly delisted; no price data found  (period=6mo)
+$MU: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['MU']: possibly delisted; no price data found  (period=6mo)
+$MU: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['MU']: possibly delisted; no price data found  (period=6mo)
+$PLTR: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['PLTR']: possibly delisted; no price data found  (period=6mo)
+$PLTR: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['PLTR']: possibly delisted; no price data found  (period=6mo)
+$COIN: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['COIN']: possibly delisted; no price data found  (period=6mo)
+$COIN: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['COIN']: possibly delisted; no price data found  (period=6mo)
+$SPY: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['SPY']: possibly delisted; no price data found  (period=6mo)
+$SPY: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['SPY']: possibly delisted; no price data found  (period=6mo)
+$QQQ: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['QQQ']: possibly delisted; no price data found  (period=6mo)
+$QQQ: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['QQQ']: possibly delisted; no price data found  (period=6mo)
+$IWM: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['IWM']: possibly delisted; no price data found  (period=6mo)
+$IWM: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['IWM']: possibly delisted; no price data found  (period=6mo)
+$DIA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['DIA']: possibly delisted; no price data found  (period=6mo)
+$DIA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['DIA']: possibly delisted; no price data found  (period=6mo)
+$AAPL: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AAPL']: possibly delisted; no price data found  (period=6mo)
+$AAPL: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AAPL']: possibly delisted; no price data found  (period=6mo)
+$MSFT: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['MSFT']: possibly delisted; no price data found  (period=6mo)
+$MSFT: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['MSFT']: possibly delisted; no price data found  (period=6mo)
+$GOOGL: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['GOOGL']: possibly delisted; no price data found  (period=6mo)
+$GOOGL: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['GOOGL']: possibly delisted; no price data found  (period=6mo)
+$AMZN: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AMZN']: possibly delisted; no price data found  (period=6mo)
+$AMZN: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AMZN']: possibly delisted; no price data found  (period=6mo)
+$NVDA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['NVDA']: possibly delisted; no price data found  (period=6mo)
+$NVDA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['NVDA']: possibly delisted; no price data found  (period=6mo)
+$META: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['META']: possibly delisted; no price data found  (period=6mo)
+$META: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['META']: possibly delisted; no price data found  (period=6mo)
+$TSLA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['TSLA']: possibly delisted; no price data found  (period=6mo)
+$TSLA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['TSLA']: possibly delisted; no price data found  (period=6mo)
+$AMD: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AMD']: possibly delisted; no price data found  (period=6mo)
+$AMD: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AMD']: possibly delisted; no price data found  (period=6mo)
+$INTC: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['INTC']: possibly delisted; no price data found  (period=6mo)
+$INTC: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['INTC']: possibly delisted; no price data found  (period=6mo)
+$MU: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['MU']: possibly delisted; no price data found  (period=6mo)
+$MU: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['MU']: possibly delisted; no price data found  (period=6mo)
+$PLTR: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['PLTR']: possibly delisted; no price data found  (period=6mo)
+$PLTR: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['PLTR']: possibly delisted; no price data found  (period=6mo)
+$COIN: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['COIN']: possibly delisted; no price data found  (period=6mo)
+$COIN: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['COIN']: possibly delisted; no price data found  (period=6mo)
+$SPY: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['SPY']: possibly delisted; no price data found  (period=6mo)
+$SPY: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['SPY']: possibly delisted; no price data found  (period=6mo)
+$QQQ: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['QQQ']: possibly delisted; no price data found  (period=6mo)
+$QQQ: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['QQQ']: possibly delisted; no price data found  (period=6mo)
+$IWM: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['IWM']: possibly delisted; no price data found  (period=6mo)
+$IWM: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['IWM']: possibly delisted; no price data found  (period=6mo)
+$DIA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['DIA']: possibly delisted; no price data found  (period=6mo)
+$DIA: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['DIA']: possibly delisted; no price data found  (period=6mo)
+$AAPL: possibly delisted; no price data found  (period=6mo)
+
+1 Failed download:
+['AAPL']: possibly delisted; no price data found  (period=6mo)

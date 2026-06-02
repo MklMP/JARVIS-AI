@@ -812,12 +812,12 @@ class JarvisCore:
         # ---- VAGO / SEGUIMIENTO: "que te parece", "y eso", "explica eso" ----
         if re.search(r'\b(qu[eé]\s*te\s*parece|qu[eé]\s*opinas|y\s*eso|y\s*entonces|entonces|explica\s*eso|cu[eé]ntame\s*m[aá]s\s*de\s*eso|qu[eé]\s*quiere\s*decir\s*eso|a\s*qu[eé]\s*te\s*refieres|es\s*bueno|es\s*malo|es\s*confiable|me\s*conviene|qu[eé]\s*crees|t[uú]\s*que\s*crees|dime\s*tu\s*opini[oó]n|c[oó]mo\s*lo\s*ve[s]|c[oó]mo\s*lo\s*vez|en\s*el\s*mercado)\b', cmd):
             contexto = self._tema_actual or (self.history[-2] if len(self.history) > 1 else "")
-            if contexto:
-                extra = f"Tema actual: {self._tema_actual}. Respuesta anterior: {self._ultima_respuesta_tema[:400]}"
-                resp = self._agente_razonar(cmd, extra)
-                if resp:
+            extra = f"Tema actual: {self._tema_actual}. Respuesta anterior: {self._ultima_respuesta_tema[:400]}" if contexto else ""
+            resp = self._agente_razonar(cmd, extra)
+            if resp:
+                if self._tema_actual:
                     self.memoria.aprender(f"{self._tema_actual} {cmd}", resp)
-                    return [("__direct__", self._tag(f"  {resp}", "Agente"))]
+                return [("__direct__", self._tag(f"  {resp}", "Agente"))]
             return [("__direct__", f"  No tengo suficiente contexto para opinar sobre '{contexto or cmd}'.")]
 
         # ---- AMPLIAR: "amplía", "más información", "dime más" ----
@@ -1097,6 +1097,7 @@ class JarvisCore:
         # ---- BOLSA ----
         # "como va apple", "precio de bitcoin", "cotizacion de tesla",
         # "bolsa de valores de apple", "bolsa apple"
+        # "que opinas de MSFT", "rsi de AAPL", "analiza TSLA"
         _STOP_STOCKS = {"que", "las", "los", "una", "uno", "esto", "eso", "con",
                         "para", "por", "esta", "este", "del", "como", "cual",
                         "tiene", "esta", "van", "fue", "era", "mas", "muy"}
@@ -1106,6 +1107,14 @@ class JarvisCore:
         m = re.search(r'\b(como\s*va|que\s*tal\s*va|dame\s*el\s*precio|como\s+va\s+la\s+|como\s+esta)\b\s*([a-zA-Z]+)', cmd)
         if m and m.group(2).lower() not in _STOP_STOCKS:
             return [("stocks", f"bolsa {m.group(2)}")]
+        m_op = re.search(r'\b(qu[eé]\s*(opinas|te\s*parece|me\s*dices|piensas|me\s*recomiendas|sabes\s*de)|cr[ií]ticame|revisa|eval[uú]a|opini[oó]n\s*sobre)\s+([a-zA-Záéíóúñ&]{2,})', cmd)
+        if m_op and not m_op.group(3).lower() in _STOP_STOCKS:
+            return [("stocks", f"bolsa {m_op.group(3)}")]
+        m_ind = re.search(r'\b(rsi|indicador|volumen|soporte|resistencia|ema|sma|macd|estoc[aá]stico|bandas\s+de\s+bollinger|atr|medias)\s*(de\s+|del\s+)?([a-zA-Záéíóúñ&]{2,})', cmd)
+        if m_ind and m_ind.group(3).lower() not in _STOP_STOCKS:
+            resp = self._agente_razonar(cmd)
+            if resp:
+                return [("__direct__", self._tag(f"  {resp}", "Agente"))]
         if re.search(r'\bbolsa\b', cmd):
             parts = cmd.split()
             idx = None
@@ -1813,8 +1822,14 @@ class JarvisCore:
         m_stock = re.search(r'\b(precio|valor|cotizaci[oó]n|cotiza|accion|bolsa)\b\s*(de\s*|del\s*)?([a-zA-Záéíóúñ&]+)', cmd)
         if not m_stock:
             m_stock = re.search(r'\b(c[oó]mo\s*va|qu[eé]\s*tal\s*va|dame\s*el\s*precio\s*(?:de\s*)?)\s*([a-zA-Záéíóúñ&]+)', cmd)
+        if not m_stock:
+            m_stock = re.search(r'\b(qu[eé]\s*(opinas|te\s*parece|me\s*dices|piensas|me\s*recomiendas|sabes\s*de)|cr[ií]ticame|revisa|eval[uú]a|opini[oó]n\s*sobre)\s+([a-zA-Záéíóúñ&]{2,})', cmd)
+        if not m_stock:
+            m_ind = re.search(r'\b(rsi|indicador|volumen|soporte|resistencia|ema|sma|macd|estoc[aá]stico|bandas\s+de\s+bollinger|atr|medias)\s*(de\s+|del\s+)?([a-zA-Záéíóúñ&]{2,})', cmd)
+            if m_ind and m_ind.group(3).lower() not in _STOP_STOCKS_V2:
+                return self._agente_razonar(cmd)
         # Stock follow-up cuando el contexto es sobre bolsa: "y de msft", "y msft", "que hay de tsla"
-        if not m_stock and self._tema_actual and re.search(r'(bolsa|precio|acci[oó]n|mercado)', self._tema_actual, re.IGNORECASE):
+        if not m_stock and self._tema_actual and re.search(r'(bolsa|precio|acci[oó]n|mercado|screener|veredicto|setup|s[íi]mbolo|ticker)', self._tema_actual, re.IGNORECASE):
             m_fup = re.search(r'^(?:y\s+(?:de\s+)?|sobre\s+el?\s+|que\s+hay\s+de\s+|d[ea]\s+el?\s+)([a-zA-Záéíóúñ&]{1,15})\s*$', cmd)
             if m_fup:
                 m_stock = m_fup

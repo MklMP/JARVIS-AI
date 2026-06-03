@@ -833,22 +833,24 @@ class JarvisCore:
         m = re.search(r'\b(qu[eé]\s+(?:cosa\s+)?(?:es|son|significa)|qui[eé]n\s*es|qui[eé]nes\s*son|c[oó]mo\s*funciona|dame\s*informaci[oó]n\s*(?:sobre|de|acerca\s*de)|explica\s*(?:qu[eé]\s*es)?|cu[eé]ntame\s*(?:sobre|de|acerca\s*de))\s+(.{3,80})', cmd, re.IGNORECASE)
         if m:
             sujeto = m.group(m.lastindex).strip().rstrip(",.!?")
-            mem = self.memoria.recordar_formateado(sujeto)
-            if mem:
-                return [("__direct__", f"  {mem}")]
             # Intentar con agente + herramientas primero
             resp = self._agente_razonar(cmd, f"El usuario pregunta sobre '{sujeto}'. Busca información precisa.")
             if resp:
                 self.memoria.aprender(sujeto, resp)
                 return [("__direct__", self._tag(f"  {resp}", "Agente"))]
             # Fallback: preguntar directamente al LLM sin herramientas
-            if self.openrouter:
-                fb = self.openrouter.preguntar(f"Responde en español: ¿{cmd}? Da una respuesta completa y detallada.")
-                if fb["exito"] and fb["resultado"]:
-                    resp = fb["resultado"]
+            ai = self.openrouter or self.gemini
+            if ai:
+                fb = ai.preguntar(f"Responde en español de forma completa y detallada: ¿{cmd}?")
+                if fb and isinstance(fb, dict) and fb.get("exito") and fb.get("resultado"):
+                    resp = fb["resultado"].strip()
                     self.memoria.aprender(sujeto, resp)
                     return [("__direct__", self._tag(f"  {resp}", "Agente"))]
-            return [("__direct__", f"  No encontré información sobre {sujeto}. ¿Quieres enseñarme?")]
+            # Ultimo recurso: busqueda web
+            web = self.buscador_web.buscar(cmd)
+            if web.get("exito"):
+                return [("__direct__", f"  {web['resultado'].strip()}")]
+            return [("__direct__", f"  No encontré información sobre {sujeto} en este momento. ¿Pruebas con otra pregunta?")]
 
         # ---- CONTINUE: reanudar ultima respuesta o seguir con tema especifico ----
         m_cont = re.search(r'\b(contin[uú]a|sigue(?:\s+hablando)?)\s+(?:hablando\s+)?(?:de|sobre|acerca\s+de)\s+(.+)', cmd, re.IGNORECASE)
@@ -1778,6 +1780,13 @@ class JarvisCore:
         resp = self.openrouter.razonar(consulta, contexto=contexto)
         if resp["exito"]:
             return resp["resultado"]
+        # Fallback: web search si el agente falla
+        web = self.buscador_web.buscar_con_motores(consulta, ["duckduckgo", "wikipedia"])
+        if web["exito"]:
+            return web["resultado"].strip()
+        web2 = self.buscador_web.buscar(consulta)
+        if web2["exito"]:
+            return web2["resultado"].strip()
         return ""
 
     def _conversar(self, cmd: str) -> str:
@@ -2078,6 +2087,17 @@ class JarvisCore:
             self.memoria.registrar_interaccion(cmd, resp, "agente")
             return self._tag(f"  {resp}", "Agente")
 
+        # Fallback final: preguntar directamente al LLM
+        ai = self.openrouter or self.gemini
+        if ai:
+            fb = ai.preguntar(f"Responde en español de forma natural y útil: {cmd}")
+            if fb and isinstance(fb, dict) and fb.get("exito") and fb.get("resultado"):
+                resp = fb["resultado"].strip()
+                if resp:
+                    self.memoria.aprender(cmd, resp)
+                    self.memoria.registrar_interaccion(cmd, resp, "agente")
+                    return self._tag(f"  {resp}", "Agente")
+
         self.memoria.registrar_interaccion(cmd, "[no entendido]", "desconocido")
         return ""
 
@@ -2119,19 +2139,23 @@ class JarvisCore:
         return motores
 
     def _no_entiendo(self, comando: str) -> str:
-        # Intentar con el LLM como último recurso
+        # Intentar con el LLM como último recurso — responder directamente, "no sé qué significa" es mentira si el LLM sí sabe
         ai = self.openrouter or self.gemini
         if ai:
             prompt = (
-                f"El usuario dijo: '{comando}'. No sé qué significa. "
-                f"Responde en español de forma natural, preguntando qué quiere decir "
-                f"o dando una respuesta amable si parece una conversación casual. "
-                f"Máximo 2 oraciones."
+                f"El usuario preguntó: '{comando}'. "
+                f"Responde en español de forma natural y útil como un asistente inteligente. "
+                f"Si es una pregunta, respóndela lo mejor que puedas. "
+                f"Máximo 3 oraciones."
             )
             resp = ai.preguntar(prompt)
-            if resp and resp.get("exito") and resp["resultado"]:
+            if resp and isinstance(resp, dict) and resp.get("exito") and resp["resultado"]:
                 return f"  {resp['resultado'].strip()}"
-        return f"  {PENSANDO}  No estoy seguro de lo que necesitas. ¿Pruebas con 'ayuda' para ver mis capacidades?"
+        # Fallback: búsqueda web directa
+        web = self.buscador_web.buscar(comando)
+        if web.get("exito"):
+            return f"  {web['resultado'].strip()}"
+        return f"    No estoy seguro de cómo responder a eso. ¿Puedes reformular la pregunta?"
 
     def _buscar_local(self, query: str) -> str:
         """Buscar un archivo local y abrirlo."""

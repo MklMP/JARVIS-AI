@@ -1109,7 +1109,7 @@ class JarvisCore:
         m = re.search(r'\b(como\s*va|que\s*tal\s*va|dame\s*el\s*precio|como\s+va\s+la\s+|como\s+esta)\b\s*([a-zA-Z]+)', cmd)
         if m and m.group(2).lower() not in _STOP_STOCKS:
             return [("stocks", f"bolsa {m.group(2)}")]
-        m_op = re.search(r'\b(qu[eé]\s*(opinas|te\s*parece|me\s*dices|piensas|me\s*recomiendas|sabes\s*de)|cr[ií]ticame|revisa|eval[uú]a|opini[oó]n\s*sobre)\s+([a-zA-Záéíóúñ&]{2,})', cmd)
+        m_op = re.search(r'\b(qu[eé]\s*(opinas|te\s*parece|me\s*dices|piensas|crees|cree|dices|sabes\s*de|opina)|cr[ií]ticame|revisa|eval[uú]a|opini[oó]n\s*sobre)\s+(?:(?:de|del|la|el|al|en|para|sobre|acerca\s+de)\s+)?([a-zA-Záéíóúñ&]{2,})', cmd)
         if m_op and not m_op.group(3).lower() in _STOP_STOCKS:
             return [("stocks", f"bolsa {m_op.group(3)}")]
         m_ind = re.search(r'\b(rsi|indicador|volumen|soporte|resistencia|ema|sma|macd|estoc[aá]stico|bandas\s+de\s+bollinger|atr|medias)\s*(de\s+|del\s+)?([a-zA-Záéíóúñ&]{2,})', cmd)
@@ -1725,10 +1725,7 @@ class JarvisCore:
     def _agente_razonar(self, consulta: str, contexto_extra: str = "") -> str:
         """Envía consulta al agente OpenRouter que decide si usar herramientas y parafrasea."""
         if not self.openrouter:
-            multi = self.buscador_web.buscar_con_motores(consulta, ["duckduckgo", "wikipedia"])
-            if multi["exito"]:
-                return multi["resultado"].strip()
-            web = self.buscador_web.buscar(consulta)
+            web = self.buscador_web.buscar(consulta, max_snippets=5)
             if web["exito"]:
                 return web["resultado"].strip()
             return ""
@@ -1781,12 +1778,9 @@ class JarvisCore:
         if resp["exito"]:
             return resp["resultado"]
         # Fallback: web search si el agente falla
-        web = self.buscador_web.buscar_con_motores(consulta, ["duckduckgo", "wikipedia"])
+        web = self.buscador_web.buscar(consulta, max_snippets=5)
         if web["exito"]:
             return web["resultado"].strip()
-        web2 = self.buscador_web.buscar(consulta)
-        if web2["exito"]:
-            return web2["resultado"].strip()
         return ""
 
     def _conversar(self, cmd: str) -> str:
@@ -1832,7 +1826,7 @@ class JarvisCore:
         if not m_stock:
             m_stock = re.search(r'\b(c[oó]mo\s*va|qu[eé]\s*tal\s*va|dame\s*el\s*precio\s*(?:de\s*)?)\s*([a-zA-Záéíóúñ&]+)', cmd)
         if not m_stock:
-            m_stock = re.search(r'\b(qu[eé]\s*(opinas|te\s*parece|me\s*dices|piensas|me\s*recomiendas|sabes\s*de)|cr[ií]ticame|revisa|eval[uú]a|opini[oó]n\s*sobre)\s+([a-zA-Záéíóúñ&]{2,})', cmd)
+            m_stock = re.search(r'\b(qu[eé]\s*(opinas|te\s*parece|me\s*dices|piensas|crees|cree|dices|sabes\s*de|opina)|cr[ií]ticame|revisa|eval[uú]a|opini[oó]n\s*sobre)\s+(?:(?:de|del|la|el|al|en|para|sobre|acerca\s+de)\s+)?([a-zA-Záéíóúñ&]{2,})', cmd)
         if not m_stock:
             m_ind = re.search(r'\b(rsi|indicador|volumen|soporte|resistencia|ema|sma|macd|estoc[aá]stico|bandas\s+de\s+bollinger|atr|medias)\s*(de\s+|del\s+)?([a-zA-Záéíóúñ&]{2,})', cmd)
             if m_ind and m_ind.group(3).lower() not in _STOP_STOCKS_V2:

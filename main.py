@@ -809,6 +809,14 @@ class JarvisCore:
                     return [("__direct__", self._tag(f"  {resp}", "Agente"))]
                 return [("__direct__", f"  Corrijo: busqué '{sujeto}' pero no encontré resultados.")]
 
+        # ---- STOCK OPINION: "que crees/opinas/piensas de TICKER" (ANTES que VAGO lo intercepte) ----
+        m_stock_op = re.search(r'\b(qu[eé]\s*(opinas|te\s*parece|me\s*dices|piensas|crees|cree|dices|sabes\s*de|opina)|cr[ií]ticame|revisa|eval[uú]a)\s+(?:(?:de|del|la|el|al|en|para|sobre|acerca\s+de)\s+)?([A-Za-záéíóúñ&]{2,})', cmd)
+        if m_stock_op:
+            simbolo = m_stock_op.group(m_stock_op.lastindex)
+            _STOP_S = {"que", "las", "los", "una", "uno", "esto", "eso", "con", "para", "por", "esta", "este", "del", "como", "cual", "tiene", "esta", "van", "fue", "era", "mas", "muy"}
+            if simbolo.lower() not in _STOP_S:
+                return [("stocks", f"bolsa {simbolo}")]
+
         # ---- VAGO / SEGUIMIENTO: "que te parece", "y eso", "explica eso" ----
         if re.search(r'\b(qu[eé]\s*te\s*parece|qu[eé]\s*opinas|y\s*eso|y\s*entonces|entonces|explica\s*eso|cu[eé]ntame\s*m[aá]s\s*de\s*eso|qu[eé]\s*quiere\s*decir\s*eso|a\s*qu[eé]\s*te\s*refieres|es\s*bueno|es\s*malo|es\s*confiable|me\s*conviene|qu[eé]\s*crees|t[uú]\s*que\s*crees|dime\s*tu\s*opini[oó]n|c[oó]mo\s*lo\s*ve[s]|c[oó]mo\s*lo\s*vez|en\s*el\s*mercado)\b', cmd):
             contexto = self._tema_actual or (self.history[-2] if len(self.history) > 1 else "")
